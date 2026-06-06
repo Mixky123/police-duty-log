@@ -19,8 +19,10 @@ app.py
 import os
 import functools
 from flask import (Flask, render_template, request, redirect,
-                   url_for, session, flash)
+                   url_for, session, flash, send_file)
+from datetime import datetime
 import db
+from pdf_report import create_monthly_report_pdf
 
 app = Flask(__name__)
 # คีย์ลับสำหรับเข้ารหัส session — ใช้ค่าจาก environment ถ้ามี (บนเซิร์ฟเวอร์จริง)
@@ -274,6 +276,113 @@ def incidents_delete(incident_id):
     success, msg = db.delete_incident(incident_id)
     flash(msg, "success" if success else "danger")
     return redirect(url_for("incidents"))
+
+
+# ==========================================================
+#  เส้นทางสำหรับ Generate ข้อมูล (Data Generation)
+# ==========================================================
+
+@app.route("/generate")
+@login_required
+def generate():
+    """หน้าสำหรับ generate ข้อมูลจำนวนมาก"""
+    stats = db.get_dashboard_stats()
+    return render_template("generate.html", stats=stats)
+
+
+@app.route("/generate/officers", methods=["POST"])
+@login_required
+def generate_officers():
+    """Generate เจ้าหน้าที่จำนวนมาก"""
+    count = request.form.get("count", "10")
+    try:
+        count = int(count)
+        if count <= 0 or count > 100:
+            flash("กรุณาระบุจำนวน 1-100 คน", "warning")
+            return redirect(url_for("generate"))
+
+        generated = db.generate_officers(count)
+        flash(f"สร้างข้อมูลเจ้าหน้าที่สำเร็จ {generated} คน", "success")
+    except ValueError:
+        flash("กรุณาระบุจำนวนเป็นตัวเลข", "danger")
+
+    return redirect(url_for("generate"))
+
+
+@app.route("/generate/incidents", methods=["POST"])
+@login_required
+def generate_incidents():
+    """Generate เหตุการณ์จำนวนมาก"""
+    count = request.form.get("count", "20")
+    try:
+        count = int(count)
+        if count <= 0 or count > 200:
+            flash("กรุณาระบุจำนวน 1-200 รายการ", "warning")
+            return redirect(url_for("generate"))
+
+        generated = db.generate_incidents(count)
+        flash(f"สร้างข้อมูลเหตุการณ์สำเร็จ {generated} รายการ", "success")
+    except ValueError:
+        flash("กรุณาระบุจำนวนเป็นตัวเลข", "danger")
+
+    return redirect(url_for("generate"))
+
+
+# ==========================================================
+#  เส้นทางสำหรับส่งออกรายงาน PDF (PDF Export)
+# ==========================================================
+
+@app.route("/reports")
+@login_required
+def reports():
+    """หน้าสำหรับเลือกเดือน/ปี และส่งออกรายงาน PDF"""
+    stats = db.get_dashboard_stats()
+    return render_template("reports.html", stats=stats)
+
+
+@app.route("/reports/export", methods=["POST"])
+@login_required
+def reports_export():
+    """ส่งออกรายงาน PDF ตามเดือน/ปีที่เลือก"""
+    year = request.form.get("year", "")
+    month = request.form.get("month", "")
+
+    try:
+        year = int(year)
+        month = int(month)
+
+        if month < 1 or month > 12:
+            flash("กรุณาเลือกเดือนที่ถูกต้อง (1-12)", "warning")
+            return redirect(url_for("reports"))
+
+        # ดึงข้อมูลเหตุการณ์ในเดือนที่เลือก
+        incidents = db.get_incidents_by_month(year, month)
+
+        if not incidents:
+            flash(f"ไม่พบข้อมูลเหตุการณ์ในเดือน {month}/{year}", "warning")
+            return redirect(url_for("reports"))
+
+        # สร้าง PDF
+        pdf_buffer = create_monthly_report_pdf(incidents, year, month)
+
+        # ชื่อไฟล์
+        thai_months = ["", "มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน",
+                       "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"]
+        filename = f"รายงาน_{thai_months[month]}_{year+543}.pdf"
+
+        return send_file(
+            pdf_buffer,
+            mimetype="application/pdf",
+            as_attachment=True,
+            download_name=filename
+        )
+
+    except ValueError:
+        flash("กรุณาระบุปี/เดือนที่ถูกต้อง", "danger")
+        return redirect(url_for("reports"))
+    except Exception as e:
+        flash(f"เกิดข้อผิดพลาดในการสร้างรายงาน: {str(e)}", "danger")
+        return redirect(url_for("reports"))
 
 
 # ==========================================================

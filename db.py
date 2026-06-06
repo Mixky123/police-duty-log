@@ -458,6 +458,104 @@ def get_dashboard_stats():
     return stats
 
 
+# ==========================================================
+#  ส่วนที่ 6 : Generate ข้อมูลจำนวนมาก (Bulk Data Generation)
+# ==========================================================
+
+def generate_officers(count=10):
+    """สร้างเจ้าหน้าที่สุ่มจำนวน count คน"""
+    import random
+    ranks = ["พ.ต.อ.", "พ.ต.ท.", "พ.ต.ต.", "ร.ต.อ.", "ร.ต.ท.", "ร.ต.ต.",
+             "ด.ต.", "ส.ต.อ.", "ส.ต.ท.", "ส.ต.ต."]
+    first_names = ["สมชาย", "วิชัย", "ประสงค์", "อนุชา", "ธนากร", "ณัฐพล",
+                   "สมศักดิ์", "วีระ", "ชัยวัฒน์", "พิชัย", "เกรียงไกร", "สุรชัย"]
+    last_names = ["ใจเด็ด", "รักษาชาติ", "มั่นคง", "กล้าหาญ", "สุจริต", "อดทน",
+                  "ซื่อตรง", "ยุติธรรม", "เข้มแข็ง", "รักษาดี", "ปกป้อง", "ดีงาม"]
+    stations = ["สภ.เมือง", "สภ.คลองหลวง", "สภ.ธัญบุรี", "สภ.รังสิต", "สภ.ลำลูกกา"]
+
+    generated = 0
+    for i in range(count):
+        rank = random.choice(ranks)
+        fname = random.choice(first_names)
+        lname = random.choice(last_names)
+        badge = f"P{random.randint(2000, 9999)}"
+        phone = f"08{random.randint(0,9)}-{random.randint(100,999)}-{random.randint(1000,9999)}"
+        station = random.choice(stations)
+
+        success, msg = add_officer(rank, f"{fname} {lname}", badge, phone, station)
+        if success:
+            generated += 1
+
+    return generated
+
+
+def generate_incidents(count=20):
+    """สร้างเหตุการณ์สุ่มจำนวน count รายการ"""
+    import random
+    from datetime import datetime, timedelta
+
+    categories = ["อุบัติเหตุจราจร", "ลักทรัพย์", "ทะเลาะวิวาท", "ยาเสพติด",
+                  "เหตุทั่วไป", "ทำร้ายร่างกาย", "รถหาย", "วิ่งราว"]
+    severities = ["ต่ำ", "ปานกลาง", "สูง", "วิกฤต"]
+    locations = ["สี่แยกกลางเมือง", "ตลาดนัด", "ห้างสรรพสินค้า", "สวนสาธารณะ",
+                 "ถนนหน้าตลาด", "ลานจอดรถห้าง", "ย่านที่พักอาศัย", "ริมถนนใหญ่"]
+
+    # ดึงรายชื่อเจ้าหน้าที่มาสุ่ม
+    officers = get_all_officers()
+    if not officers:
+        return 0
+
+    generated = 0
+    for i in range(count):
+        # สุ่มเวลาย้อนหลัง 30 วัน
+        days_ago = random.randint(0, 30)
+        hours = random.randint(0, 23)
+        minutes = random.randint(0, 59)
+        incident_time = datetime.now() - timedelta(days=days_ago, hours=hours, minutes=minutes)
+        time_str = incident_time.strftime("%Y-%m-%d %H:%M")
+
+        category = random.choice(categories)
+        severity = random.choice(severities)
+        location = random.choice(locations)
+        description = f"เหตุการณ์ {category} เกิดขึ้นที่ {location}"
+        officer_id = random.choice(officers)["id"]
+
+        success, msg = add_incident(time_str, category, severity, location, description, officer_id)
+        if success:
+            generated += 1
+
+    return generated
+
+
+# ==========================================================
+#  ส่วนที่ 7 : ดึงข้อมูลเหตุการณ์ตามเดือน (Monthly Report)
+# ==========================================================
+
+def get_incidents_by_month(year, month):
+    """ดึงเหตุการณ์ทั้งหมดในเดือนที่กำหนด คืน list ของ dict"""
+    conn = get_connection()
+    cur = _dict_cursor(conn)
+
+    # สร้างช่วงวันที่ของเดือน
+    start_date = f"{year}-{month:02d}-01"
+    if month == 12:
+        end_date = f"{year+1}-01-01"
+    else:
+        end_date = f"{year}-{month+1:02d}-01"
+
+    cur.execute(f"""
+        SELECT i.*, o.rank, o.full_name AS officer_name
+        FROM incidents i
+        LEFT JOIN officers o ON i.officer_id = o.id
+        WHERE i.incident_time >= {PH} AND i.incident_time < {PH}
+        ORDER BY i.incident_time DESC;
+    """, (start_date, end_date))
+
+    rows = [_row_to_dict(r) for r in cur.fetchall()]
+    conn.close()
+    return rows
+
+
 # รันไฟล์นี้โดยตรงเพื่อสร้าง/ตรวจสอบฐานข้อมูล
 if __name__ == "__main__":
     import sys

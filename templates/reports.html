@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>รายงาน PDF - ระบบจัดการเวรตำรวจ</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <nav>
+        <div class="nav-brand">ระบบจัดการเวรและบันทึกเหตุ</div>
+        <div class="nav-links">
+            <a href="{{ url_for('dashboard') }}">📊 แดชบอร์ด</a>
+            <a href="{{ url_for('officers') }}">👮 เจ้าหน้าที่</a>
+            <a href="{{ url_for('duties') }}">📅 ตารางเวร</a>
+            <a href="{{ url_for('incidents') }}">📝 บันทึกเหตุการณ์</a>
+            <a href="{{ url_for('reports') }}" class="active">📄 รายงาน</a>
+            <a href="{{ url_for('generate') }}">🔧 Generate ข้อมูล</a>
+            <a href="{{ url_for('logout') }}" style="color: #ef4444;">🚪 ออกจากระบบ</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <h1>📄 ส่งออกรายงาน PDF</h1>
+        <p class="subtitle">เลือกเดือน/ปี เพื่อส่งออกรายงานสรุปเหตุการณ์</p>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 2rem; margin-top: 2rem;">
+            <!-- ฟอร์มเลือกเดือน/ปี -->
+            <div class="card">
+                <h2 style="color: #1e40af; margin-bottom: 1rem;">📅 เลือกช่วงเวลา</h2>
+
+                <form method="POST" action="{{ url_for('reports_export') }}">
+                    <div class="form-group">
+                        <label for="month">เดือน</label>
+                        <select id="month" name="month" required class="form-control">
+                            <option value="">-- เลือกเดือน --</option>
+                            <option value="1">มกราคม</option>
+                            <option value="2">กุมภาพันธ์</option>
+                            <option value="3">มีนาคม</option>
+                            <option value="4">เมษายน</option>
+                            <option value="5">พฤษภาคม</option>
+                            <option value="6" selected>มิถุนายน</option>
+                            <option value="7">กรกฎาคม</option>
+                            <option value="8">สิงหาคม</option>
+                            <option value="9">กันยายน</option>
+                            <option value="10">ตุลาคม</option>
+                            <option value="11">พฤศจิกายน</option>
+                            <option value="12">ธันวาคม</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="year">ปี (ค.ศ.)</label>
+                        <select id="year" name="year" required class="form-control">
+                            <option value="">-- เลือกปี --</option>
+                            <option value="2024">2024 (2567)</option>
+                            <option value="2025">2025 (2568)</option>
+                            <option value="2026" selected>2026 (2569)</option>
+                            <option value="2027">2027 (2570)</option>
+                        </select>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary" style="width: 100%; font-size: 1.1rem;">
+                        📥 ดาวน์โหลดรายงาน PDF
+                    </button>
+                </form>
+
+                <div style="margin-top: 1.5rem; padding: 1rem; background: #eff6ff; border-radius: 8px;">
+                    <h4 style="color: #1e40af; margin: 0 0 0.5rem 0;">📋 รายงานจะประกอบด้วย:</h4>
+                    <ul style="margin: 0; padding-left: 1.5rem; color: #1e3a8a; line-height: 1.8;">
+                        <li>สรุปภาพรวมเหตุการณ์ทั้งเดือน</li>
+                        <li>สถิติแยกตามประเภทเหตุการณ์</li>
+                        <li>สถิติแยกตามความรุนแรง</li>
+                        <li>สถิติแยกตามสถานะการดำเนินการ</li>
+                        <li>ตารางรายละเอียดเหตุการณ์ทั้งหมด</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- คำแนะนำ -->
+            <div>
+                <div class="card" style="background: #fef3c7;">
+                    <h3 style="color: #92400e; margin-bottom: 1rem;">💡 วิธีใช้งาน</h3>
+                    <ol style="color: #78350f; line-height: 1.8; font-size: 0.95rem;">
+                        <li>เลือกเดือนและปีที่ต้องการ</li>
+                        <li>กดปุ่มดาวน์โหลด</li>
+                        <li>ระบบจะสร้างไฟล์ PDF และดาวน์โหลดอัตโนมัติ</li>
+                        <li>เปิดไฟล์ด้วยโปรแกรมอ่าน PDF</li>
+                    </ol>
+                </div>
+
+                <div class="card" style="margin-top: 1rem; background: #fee2e2;">
+                    <h3 style="color: #991b1b; margin-bottom: 1rem;">⚠️ หมายเหตุ</h3>
+                    <ul style="color: #7f1d1d; line-height: 1.8; font-size: 0.95rem; margin: 0; padding-left: 1.5rem;">
+                        <li>ระบบจะแสดงเฉพาะเหตุการณ์ในเดือนที่เลือก</li>
+                        <li>ถ้าไม่มีข้อมูลจะไม่สามารถส่งออกได้</li>
+                        <li>รองรับภาษาไทยในไฟล์ PDF</li>
+                    </ul>
+                </div>
+
+                <div class="card" style="margin-top: 1rem; background: #dcfce7;">
+                    <h3 style="color: #166534; margin-bottom: 1rem;">✨ ตัวอย่างรายงาน</h3>
+                    <p style="color: #14532d; font-size: 0.9rem; margin: 0;">
+                        รายงานจะแสดงในรูปแบบตาราง พร้อมกราฟสรุป
+                        และสามารถนำไปพิมพ์หรือส่งต่อได้ทันที
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ข้อมูลสถิติปัจจุบัน -->
+        <div class="card" style="margin-top: 2rem;">
+            <h3 style="color: #1e40af; margin-bottom: 1rem;">📊 สถิติเหตุการณ์ในระบบ</h3>
+            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; text-align: center;">
+                <div style="padding: 1rem; background: #f0f9ff; border-radius: 8px;">
+                    <div style="font-size: 2rem; font-weight: bold; color: #2563eb;">
+                        {{ stats.total_incidents }}
+                    </div>
+                    <div style="color: #64748b; margin-top: 0.5rem;">เหตุการณ์ทั้งหมด</div>
+                </div>
+                <div style="padding: 1rem; background: #fef3c7; border-radius: 8px;">
+                    <div style="font-size: 2rem; font-weight: bold; color: #d97706;">
+                        {{ stats.open_incidents }}
+                    </div>
+                    <div style="color: #64748b; margin-top: 0.5rem;">รอดำเนินการ</div>
+                </div>
+                <div style="padding: 1rem; background: #fee2e2; border-radius: 8px;">
+                    <div style="font-size: 2rem; font-weight: bold; color: #dc2626;">
+                        {{ stats.by_severity.get('สูง', 0) + stats.by_severity.get('วิกฤต', 0) }}
+                    </div>
+                    <div style="color: #64748b; margin-top: 0.5rem;">ความรุนแรงสูง</div>
+                </div>
+                <div style="padding: 1rem; background: #dcfce7; border-radius: 8px;">
+                    <div style="font-size: 2rem; font-weight: bold; color: #16a34a;">
+                        {{ stats.total_officers }}
+                    </div>
+                    <div style="color: #64748b; margin-top: 0.5rem;">เจ้าหน้าที่</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>ระบบจัดการเวรและบันทึกเหตุประจำวันของตำรวจ | พัฒนาโดยนักเรียนนายร้อย รายวิชา 341314 Computer Programming</p>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generate ข้อมูล - ระบบจัดการเวรตำรวจ</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <nav>
+        <div class="nav-brand">ระบบจัดการเวรและบันทึกเหตุ</div>
+        <div class="nav-links">
+            <a href="{{ url_for('dashboard') }}">📊 แดชบอร์ด</a>
+            <a href="{{ url_for('officers') }}">👮 เจ้าหน้าที่</a>
+            <a href="{{ url_for('duties') }}">📅 ตารางเวร</a>
+            <a href="{{ url_for('incidents') }}">📝 บันทึกเหตุการณ์</a>
+            <a href="{{ url_for('reports') }}">📄 รายงาน</a>
+            <a href="{{ url_for('generate') }}" class="active">🔧 Generate ข้อมูล</a>
+            <a href="{{ url_for('logout') }}" style="color: #ef4444;">🚪 ออกจากระบบ</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <h1>🔧 Generate ข้อมูลจำนวนมาก</h1>
+        <p class="subtitle">สร้างข้อมูลตัวอย่างสำหรับทดสอบระบบ</p>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-top: 2rem;">
+            <!-- Generate เจ้าหน้าที่ -->
+            <div class="card">
+                <h2 style="color: #1e40af; margin-bottom: 1rem;">👮 Generate เจ้าหน้าที่</h2>
+                <p style="color: #64748b; margin-bottom: 1.5rem;">
+                    สร้างข้อมูลเจ้าหน้าที่สุ่มพร้อมยศ ชื่อ เลขตำรวจ เบอร์โทร และสถานี
+                </p>
+
+                <form method="POST" action="{{ url_for('generate_officers') }}">
+                    <div class="form-group">
+                        <label for="officer_count">จำนวนที่ต้องการสร้าง (1-100 คน)</label>
+                        <input type="number" id="officer_count" name="count"
+                               min="1" max="100" value="10" required
+                               class="form-control">
+                    </div>
+
+                    <button type="submit" class="btn btn-primary" style="width: 100%;">
+                        ✨ สร้างเจ้าหน้าที่
+                    </button>
+                </form>
+
+                <div style="margin-top: 1rem; padding: 1rem; background: #fef3c7; border-radius: 8px; font-size: 0.9rem;">
+                    <strong>⚠️ หมายเหตุ:</strong>
+                    <ul style="margin: 0.5rem 0 0 1.5rem; color: #92400e;">
+                        <li>ระบบจะสุ่มยศ ชื่อ เลขตำรวจ และสถานี</li>
+                        <li>ถ้าเลขตำรวจซ้ำจะข้ามการสร้างรายการนั้น</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Generate เหตุการณ์ -->
+            <div class="card">
+                <h2 style="color: #1e40af; margin-bottom: 1rem;">📝 Generate เหตุการณ์</h2>
+                <p style="color: #64748b; margin-bottom: 1.5rem;">
+                    สร้างข้อมูลเหตุการณ์สุ่มย้อนหลัง 30 วัน พร้อมประเภท ความรุนแรง และสถานที่
+                </p>
+
+                <form method="POST" action="{{ url_for('generate_incidents') }}">
+                    <div class="form-group">
+                        <label for="incident_count">จำนวนที่ต้องการสร้าง (1-200 รายการ)</label>
+                        <input type="number" id="incident_count" name="count"
+                               min="1" max="200" value="20" required
+                               class="form-control">
+                    </div>
+
+                    <button type="submit" class="btn btn-primary" style="width: 100%;">
+                        ✨ สร้างเหตุการณ์
+                    </button>
+                </form>
+
+                <div style="margin-top: 1rem; padding: 1rem; background: #fef3c7; border-radius: 8px; font-size: 0.9rem;">
+                    <strong>⚠️ หมายเหตุ:</strong>
+                    <ul style="margin: 0.5rem 0 0 1.5rem; color: #92400e;">
+                        <li>ต้องมีเจ้าหน้าที่อย่างน้อย 1 คนในระบบก่อน</li>
+                        <li>วันเวลาจะสุ่มย้อนหลัง 30 วัน</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- คำแนะนำการใช้งาน -->
+        <div class="card" style="margin-top: 2rem; background: #eff6ff;">
+            <h3 style="color: #1e40af; margin-bottom: 1rem;">💡 วิธีใช้งาน</h3>
+            <ol style="color: #1e3a8a; line-height: 1.8;">
+                <li><strong>Generate เจ้าหน้าที่ก่อน</strong> - สร้างข้อมูลเจ้าหน้าที่ 10-20 คนเพื่อใช้ในการทดสอบ</li>
+                <li><strong>Generate เหตุการณ์</strong> - สร้างเหตุการณ์ 20-50 รายการเพื่อดูสถิติและกราฟ</li>
+                <li><strong>ตรวจสอบข้อมูล</strong> - ดูข้อมูลที่สร้างในหน้าเจ้าหน้าที่ และบันทึกเหตุการณ์</li>
+                <li><strong>ส่งออกรายงาน</strong> - ไปที่หน้ารายงานเพื่อส่งออก PDF ของเดือนที่มีข้อมูล</li>
+            </ol>
+        </div>
+
+        <!-- ข้อมูลปัจจุบันในระบบ -->
+        <div class="card" style="margin-top: 2rem;">
+            <h3 style="color: #1e40af; margin-bottom: 1rem;">📊 สถิติข้อมูลในระบบ</h3>
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; text-align: center;">
+                <div style="padding: 1rem; background: #f0f9ff; border-radius: 8px;">
+                    <div style="font-size: 2rem; font-weight: bold; color: #2563eb;">
+                        {{ stats.total_officers }}
+                    </div>
+                    <div style="color: #64748b; margin-top: 0.5rem;">เจ้าหน้าที่ทั้งหมด</div>
+                </div>
+                <div style="padding: 1rem; background: #fef3c7; border-radius: 8px;">
+                    <div style="font-size: 2rem; font-weight: bold; color: #d97706;">
+                        {{ stats.total_duties }}
+                    </div>
+                    <div style="color: #64748b; margin-top: 0.5rem;">รายการเวรทั้งหมด</div>
+                </div>
+                <div style="padding: 1rem; background: #fee2e2; border-radius: 8px;">
+                    <div style="font-size: 2rem; font-weight: bold; color: #dc2626;">
+                        {{ stats.total_incidents }}
+                    </div>
+                    <div style="color: #64748b; margin-top: 0.5rem;">เหตุการณ์ทั้งหมด</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>ระบบจัดการเวรและบันทึกเหตุประจำวันของตำรวจ | พัฒนาโดยนักเรียนนายร้อย รายวิชา 341314 Computer Programming</p>
+    </footer>
+</body>
+</html>
