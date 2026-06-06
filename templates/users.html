@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+{% block title %}จัดการผู้ใช้{% endblock %}
+
+{% block content %}
+<div class="page-title">จัดการผู้ใช้งานระบบ</div>
+<div class="page-subtitle">เพิ่ม แก้ไข และลบบัญชีผู้ใช้ (Admin เท่านั้น)</div>
+
+{# ฟอร์มเพิ่มผู้ใช้ใหม่ #}
+<div class="card">
+    <h2>เพิ่มผู้ใช้ใหม่</h2>
+    <form method="POST" action="{{ url_for('users_add') }}">
+        <div class="form-grid">
+            <div class="form-group">
+                <label>ชื่อผู้ใช้ (Username)</label>
+                <input type="text" name="username" required placeholder="ตัวอักษร a-z, 0-9">
+            </div>
+            <div class="form-group">
+                <label>รหัสผ่าน (Password)</label>
+                <input type="password" name="password" required placeholder="อย่างน้อย 4 ตัวอักษร">
+            </div>
+            <div class="form-group">
+                <label>บทบาท (Role)</label>
+                <select name="role" required>
+                    <option value="officer">Officer (เจ้าหน้าที่ทั่วไป)</option>
+                    <option value="admin">Admin (ผู้ดูแลระบบ)</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-actions">
+            <button type="submit" class="btn btn-success">เพิ่มผู้ใช้</button>
+        </div>
+    </form>
+</div>
+
+{# ตารางผู้ใช้ทั้งหมด #}
+<div class="card">
+    <h2>รายชื่อผู้ใช้ทั้งหมด ({{ users|length }} คน)</h2>
+    <div class="table-wrap">
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>ชื่อผู้ใช้</th>
+                <th>บทบาท</th>
+                <th>สร้างเมื่อ</th>
+                <th>จัดการ</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for u in users %}
+            <tr>
+                <td>{{ u.id }}</td>
+                <td><strong>{{ u.username }}</strong></td>
+                <td>
+                    {% if u.role == 'admin' %}
+                        <span class="badge badge-high">Admin</span>
+                    {% else %}
+                        <span class="badge badge-investigating">Officer</span>
+                    {% endif %}
+                </td>
+                <td>{{ u.created_at[:16] if u.created_at else '-' }}</td>
+                <td>
+                    <div class="inline-form">
+                        <button type="button" class="btn btn-primary btn-sm"
+                                onclick="toggleEdit('{{ u.id }}')">แก้ไข</button>
+                        <form method="POST" action="{{ url_for('users_delete', user_id=u.id) }}"
+                              onsubmit="return confirm('ต้องการลบผู้ใช้ {{ u.username }} หรือไม่?');">
+                            <button type="submit" class="btn btn-danger btn-sm">ลบ</button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+            {# แถวฟอร์มแก้ไข #}
+            <tr id="edit-{{ u.id }}" style="display:none; background:#fff8e1;">
+                <td colspan="5">
+                    <div style="padding: 1rem;">
+                        <h3 style="margin-top: 0;">แก้ไขข้อมูล: {{ u.username }}</h3>
+
+                        {# ฟอร์มเปลี่ยนรหัสผ่าน #}
+                        <form method="POST" action="{{ url_for('users_change_password', user_id=u.id) }}" style="margin-bottom: 1rem;">
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label>รหัสผ่านใหม่</label>
+                                    <input type="password" name="new_password" required placeholder="กรอกรหัสผ่านใหม่">
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-sm">เปลี่ยนรหัสผ่าน</button>
+                        </form>
+
+                        {# ฟอร์มเปลี่ยนบทบาท #}
+                        <form method="POST" action="{{ url_for('users_change_role', user_id=u.id) }}" style="margin-bottom: 1rem;">
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label>บทบาท</label>
+                                    <select name="role">
+                                        <option value="officer" {% if u.role == 'officer' %}selected{% endif %}>Officer</option>
+                                        <option value="admin" {% if u.role == 'admin' %}selected{% endif %}>Admin</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-sm">เปลี่ยนบทบาท</button>
+                        </form>
+
+                        <button type="button" class="btn btn-muted btn-sm" onclick="toggleEdit('{{ u.id }}')">ยกเลิก</button>
+                    </div>
+                </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="5" style="text-align:center; color:#95a5a6;">ยังไม่มีผู้ใช้</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
+</div>
+
+<div class="card" style="background: #fef3c7; border-left: 4px solid #f59e0b;">
+    <h3 style="margin-top: 0; color: #92400e;">⚠️ คำเตือนสำคัญ</h3>
+    <ul style="margin: 0; padding-left: 1.5rem; color: #78350f;">
+        <li>Admin สามารถเข้าถึงทุกฟังก์ชัน รวมถึง Generate ข้อมูล และจัดการผู้ใช้</li>
+        <li>Officer สามารถใช้งานทั่วไป แต่ไม่สามารถ Generate ข้อมูลหรือจัดการผู้ใช้</li>
+        <li>ห้ามลบ Admin คนสุดท้ายในระบบ</li>
+        <li>รหัสผ่านจะถูกเข้ารหัสด้วย SHA-256</li>
+    </ul>
+</div>
+
+<script>
+function toggleEdit(id) {
+    var row = document.getElementById('edit-' + id);
+    row.style.display = (row.style.display === 'none') ? 'table-row' : 'none';
+}
+</script>
+{% endblock %}

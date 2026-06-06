@@ -60,9 +60,11 @@
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 1rem;">
         <h2>บันทึกเหตุการณ์ทั้งหมด ({{ incidents|length }} รายการ)</h2>
         <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+            {% if session.get('role') == 'admin' %}
             <button type="button" class="btn btn-secondary" onclick="document.getElementById('generateModal').style.display='flex'">
                 ✨ Generate ข้อมูล
             </button>
+            {% endif %}
             <form method="POST" action="{{ url_for('incidents_export_all') }}" style="display: inline;">
                 <button type="submit" class="btn btn-danger">
                     📥 ส่งออก PDF ทั้งหมด

@@ -47,6 +47,20 @@ def login_required(view):
     return wrapped_view
 
 
+def admin_required(view):
+    """decorator สำหรับป้องกันหน้าที่ต้องเป็น admin เท่านั้น"""
+    @functools.wraps(view)
+    def wrapped_view(*args, **kwargs):
+        if "user_id" not in session:
+            flash("กรุณาเข้าสู่ระบบก่อนใช้งาน", "warning")
+            return redirect(url_for("login"))
+        if session.get("role") != "admin":
+            flash("คุณไม่มีสิทธิ์เข้าถึงหน้านี้ (Admin เท่านั้น)", "danger")
+            return redirect(url_for("dashboard"))
+        return view(*args, **kwargs)
+    return wrapped_view
+
+
 # ==========================================================
 #  เส้นทางการยืนยันตัวตน (Authentication Routes)
 # ==========================================================
@@ -192,6 +206,60 @@ def officers_delete(officer_id):
     success, msg = db.delete_officer(officer_id)
     flash(msg, "success" if success else "danger")
     return redirect(url_for("officers"))
+
+
+# ==========================================================
+#  เส้นทางจัดการผู้ใช้ (Users) - Admin เท่านั้น
+# ==========================================================
+
+@app.route("/users")
+@admin_required
+def users():
+    """แสดงรายชื่อผู้ใช้ทั้งหมด (Admin เท่านั้น)"""
+    all_users = db.get_all_users()
+    return render_template("users.html", users=all_users)
+
+
+@app.route("/users/add", methods=["POST"])
+@admin_required
+def users_add():
+    """เพิ่มผู้ใช้ใหม่"""
+    username = request.form.get("username", "").strip()
+    password = request.form.get("password", "").strip()
+    role = request.form.get("role", "officer")
+
+    success, msg = db.add_user(username, password, role)
+    flash(msg, "success" if success else "danger")
+    return redirect(url_for("users"))
+
+
+@app.route("/users/change-password/<int:user_id>", methods=["POST"])
+@admin_required
+def users_change_password(user_id):
+    """เปลี่ยนรหัสผ่านผู้ใช้"""
+    new_password = request.form.get("new_password", "").strip()
+    success, msg = db.update_user_password(user_id, new_password)
+    flash(msg, "success" if success else "danger")
+    return redirect(url_for("users"))
+
+
+@app.route("/users/change-role/<int:user_id>", methods=["POST"])
+@admin_required
+def users_change_role(user_id):
+    """เปลี่ยนบทบาทผู้ใช้"""
+    role = request.form.get("role", "officer")
+    success, msg = db.update_user_role(user_id, role)
+    flash(msg, "success" if success else "danger")
+    return redirect(url_for("users"))
+
+
+@app.route("/users/delete/<int:user_id>", methods=["POST"])
+@admin_required
+def users_delete(user_id):
+    """ลบผู้ใช้"""
+    success, msg = db.delete_user(user_id)
+    flash(msg, "success" if success else "danger")
+    return redirect(url_for("users"))
 
 
 # ==========================================================
@@ -341,21 +409,21 @@ def incidents_delete(incident_id):
 
 
 # ==========================================================
-#  เส้นทางสำหรับ Generate ข้อมูล (Data Generation)
+#  เส้นทางสำหรับ Generate ข้อมูล (Data Generation) - Admin เท่านั้น
 # ==========================================================
 
 @app.route("/generate")
-@login_required
+@admin_required
 def generate():
-    """หน้าสำหรับ generate ข้อมูลจำนวนมาก"""
+    """หน้าสำหรับ generate ข้อมูลจำนวนมาก (Admin เท่านั้น)"""
     stats = db.get_dashboard_stats()
     return render_template("generate.html", stats=stats)
 
 
 @app.route("/generate/officers", methods=["POST"])
-@login_required
+@admin_required
 def generate_officers():
-    """Generate เจ้าหน้าที่จำนวนมาก"""
+    """Generate เจ้าหน้าที่จำนวนมาก (Admin เท่านั้น)"""
     count = request.form.get("count", "10")
     try:
         count = int(count)
@@ -372,8 +440,9 @@ def generate_officers():
 
 
 @app.route("/generate/incidents", methods=["POST"])
-@login_required
+@admin_required
 def generate_incidents():
+    """Generate เหตุการณ์จำนวนมาก (Admin เท่านั้น)"""
     """Generate เหตุการณ์จำนวนมาก"""
     count = request.form.get("count", "20")
     try:

@@ -47,9 +47,11 @@
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
         <h2>รายชื่อเจ้าหน้าที่ทั้งหมด ({{ officers|length }} นาย)</h2>
         <div style="display: flex; gap: 1rem;">
+            {% if session.get('role') == 'admin' %}
             <button type="button" class="btn btn-secondary" onclick="document.getElementById('generateModal').style.display='flex'">
                 ✨ Generate ข้อมูล
             </button>
+            {% endif %}
             <div class="btn-group" style="border: 1px solid #cbd5e1; border-radius: 8px; overflow: hidden;">
                 <a href="{{ url_for('officers', sort='rank', order='asc') }}"
                    class="btn btn-outline {% if sort_by == 'rank' %}active{% endif %}"

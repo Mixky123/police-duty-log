@@ -197,6 +197,92 @@ def register_user(username, password, role="officer"):
         )
         conn.commit()
         conn.close()
+        return True, "สมัครบัญชีสำเร็จ"
+    except Exception as e:
+        return False, "ชื่อผู้ใช้นี้มีอยู่แล้ว หรือเกิดข้อผิดพลาด: " + str(e)
+
+
+def get_all_users():
+    """ดึงข้อมูลผู้ใช้ทั้งหมด (สำหรับ admin)"""
+    conn = get_connection()
+    cur = _dict_cursor(conn)
+    cur.execute("SELECT id, username, role, created_at FROM users ORDER BY id;")
+    rows = [_row_to_dict(r) for r in cur.fetchall()]
+    conn.close()
+    return rows
+
+
+def add_user(username, password, role):
+    """เพิ่มผู้ใช้ใหม่ (โดย admin)"""
+    if not username or not password:
+        return False, "กรุณากรอกชื่อผู้ใช้และรหัสผ่านให้ครบ"
+    try:
+        conn = get_connection()
+        cur = conn.cursor()
+        cur.execute(
+            f"INSERT INTO users (username, password_hash, role, created_at) VALUES ({PH}, {PH}, {PH}, {PH});",
+            (username, hash_password(password), role, now_str()),
+        )
+        conn.commit()
+        conn.close()
+        return True, "เพิ่มผู้ใช้สำเร็จ"
+    except Exception as e:
+        return False, "ชื่อผู้ใช้นี้มีอยู่แล้ว หรือเกิดข้อผิดพลาด: " + str(e)
+
+
+def update_user_password(user_id, new_password):
+    """เปลี่ยนรหัสผ่านผู้ใช้"""
+    if not new_password:
+        return False, "กรุณากรอกรหัสผ่านใหม่"
+    try:
+        conn = get_connection()
+        cur = conn.cursor()
+        cur.execute(
+            f"UPDATE users SET password_hash = {PH} WHERE id = {PH};",
+            (hash_password(new_password), user_id),
+        )
+        conn.commit()
+        conn.close()
+        return True, "เปลี่ยนรหัสผ่านสำเร็จ"
+    except Exception as e:
+        return False, "เกิดข้อผิดพลาด: " + str(e)
+
+
+def update_user_role(user_id, role):
+    """เปลี่ยนบทบาทผู้ใช้"""
+    try:
+        conn = get_connection()
+        cur = conn.cursor()
+        cur.execute(f"UPDATE users SET role = {PH} WHERE id = {PH};", (role, user_id))
+        conn.commit()
+        conn.close()
+        return True, "เปลี่ยนบทบาทสำเร็จ"
+    except Exception as e:
+        return False, "เกิดข้อผิดพลาด: " + str(e)
+
+
+def delete_user(user_id):
+    """ลบผู้ใช้"""
+    try:
+        conn = get_connection()
+        cur = conn.cursor()
+        # ตรวจสอบว่าไม่ใช่ admin คนเดียว
+        cur.execute("SELECT COUNT(*) FROM users WHERE role = 'admin';")
+        admin_count = cur.fetchone()[0]
+
+        cur.execute(f"SELECT role FROM users WHERE id = {PH};", (user_id,))
+        user_role = cur.fetchone()
+
+        if user_role and user_role[0] == 'admin' and admin_count <= 1:
+            conn.close()
+            return False, "ไม่สามารถลบ admin คนสุดท้ายได้"
+
+        cur.execute(f"DELETE FROM users WHERE id = {PH};", (user_id,))
+        conn.commit()
+        conn.close()
+        return True, "ลบผู้ใช้สำเร็จ"
+    except Exception as e:
+        return False, "เกิดข้อผิดพลาด: " + str(e)
         return True, "สมัครบัญชีผู้ใช้สำเร็จ"
     except Exception as e:
         # ทั้ง psycopg2 และ sqlite3 จะ raise error เมื่อ username ซ้ำ (UNIQUE)
@@ -378,7 +464,7 @@ def get_all_incidents():
     cur = _dict_cursor(conn)
     cur.execute("""
         SELECT i.id, i.incident_time, i.category, i.severity, i.location,
-               i.description, i.status, o.full_name AS officer_name
+               i.description, i.status, o.rank, o.full_name AS officer_name
         FROM incidents i
         LEFT JOIN officers o ON i.officer_id = o.id
         ORDER BY i.incident_time DESC;
