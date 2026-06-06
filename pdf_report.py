@@ -20,6 +20,12 @@ import os
 def register_thai_font():
     """ลงทะเบียนฟอนต์ไทยจากระบบ Windows"""
     try:
+        # ลองใช้ Tahoma ก่อน (มีใน Windows ทุก version และรองรับไทย)
+        font_path = "C:/Windows/Fonts/tahoma.ttf"
+        if os.path.exists(font_path):
+            pdfmetrics.registerFont(TTFont('THFont', font_path))
+            return 'THFont'
+
         # ใช้ Sarabun หรือ THSarabunNew ถ้ามีใน Windows
         font_path = "C:/Windows/Fonts/THSarabunNew.ttf"
         if os.path.exists(font_path):
@@ -239,7 +245,7 @@ def create_monthly_report_pdf(incidents, year, month, output_path=None):
     doc.build(elements)
 
     if output_path:
-        return None
+        return output_path
     else:
         buffer.seek(0)
         return buffer
