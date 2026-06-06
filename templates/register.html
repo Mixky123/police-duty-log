@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}สมัครบัญชีผู้ใช้ใหม่{% endblock %}
+
+{% block content %}
+<div class="auth-wrap">
+    <div class="auth-box">
+        <div class="auth-header">
+            <div class="icon">🛡</div>
+            <h1>สมัครบัญชีผู้ใช้ใหม่</h1>
+            <div class="en">CREATE NEW ACCOUNT</div>
+        </div>
+        <div class="auth-body">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% for category, message in messages %}
+                    <div class="flash flash-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endwith %}
+
+            <form method="POST" action="{{ url_for('register') }}">
+                <div class="form-group">
+                    <label for="username">ชื่อผู้ใช้ (Username)</label>
+                    <input type="text" id="username" name="username" required autofocus>
+                </div>
+                <div class="form-group">
+                    <label for="password">รหัสผ่าน (Password)</label>
+                    <input type="password" id="password" name="password" required>
+                </div>
+                <div class="form-group">
+                    <label for="confirm">ยืนยันรหัสผ่าน</label>
+                    <input type="password" id="confirm" name="confirm" required>
+                </div>
+                <button type="submit" class="btn btn-success">สมัครบัญชี</button>
+            </form>
+
+            <div class="auth-footer">
+                มีบัญชีอยู่แล้ว? <a href="{{ url_for('login') }}">กลับไปหน้าเข้าสู่ระบบ</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

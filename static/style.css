@@ -1,0 +1,271 @@
+/* ============================================================
+   style.css — ธีมหลักของระบบจัดการเวรและบันทึกเหตุประจำวันของตำรวจ
+   โทนสี: น้ำเงินเข้ม-ทอง (แนวราชการ/ตำรวจ)
+   ออกแบบให้ใช้งานได้ทั้งบนคอมพิวเตอร์และมือถือ (responsive)
+   ============================================================ */
+
+:root {
+    --primary: #1a3a6b;
+    --secondary: #2a5298;
+    --accent: #d4af37;
+    --bg: #eef2f7;
+    --white: #ffffff;
+    --text: #1c2733;
+    --muted: #7f8c8d;
+    --danger: #c0392b;
+    --success: #27ae60;
+    --warning: #e67e22;
+    --shadow: 0 2px 10px rgba(26, 58, 107, 0.12);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: "Segoe UI", "Sarabun", "Tahoma", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+}
+
+a { text-decoration: none; color: inherit; }
+
+/* ---------- แถบเมนูด้านบน (navbar) ---------- */
+.navbar {
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    color: var(--white);
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 62px;
+    box-shadow: var(--shadow);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+.navbar .brand {
+    font-size: 19px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.navbar .brand .badge-icon { color: var(--accent); font-size: 24px; }
+.navbar .nav-links { display: flex; gap: 4px; align-items: center; }
+.navbar .nav-links a {
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 15px;
+    transition: background 0.2s;
+}
+.navbar .nav-links a:hover { background: rgba(255, 255, 255, 0.15); }
+.navbar .nav-links a.active { background: var(--accent); color: var(--primary); font-weight: 600; }
+.navbar .user-box { font-size: 14px; color: var(--accent); margin-right: 8px; }
+.navbar .logout-btn {
+    background: var(--danger);
+    padding: 7px 14px;
+    border-radius: 6px;
+    font-size: 14px;
+}
+
+/* ---------- โครงหน้าหลัก ---------- */
+.container { max-width: 1180px; margin: 0 auto; padding: 24px; }
+.page-title { font-size: 26px; font-weight: 700; color: var(--primary); margin-bottom: 4px; }
+.page-subtitle { color: var(--muted); font-size: 15px; margin-bottom: 22px; }
+
+/* ---------- การ์ด ---------- */
+.card {
+    background: var(--white);
+    border-radius: 10px;
+    box-shadow: var(--shadow);
+    padding: 22px;
+    margin-bottom: 22px;
+}
+.card h2 { font-size: 19px; color: var(--primary); margin-bottom: 14px; }
+
+/* ---------- การ์ดตัวเลขแดชบอร์ด ---------- */
+.stat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: 18px;
+    margin-bottom: 26px;
+}
+.stat-card {
+    border-radius: 10px;
+    padding: 22px;
+    color: var(--white);
+    box-shadow: var(--shadow);
+}
+.stat-card .num { font-size: 38px; font-weight: 700; line-height: 1; }
+.stat-card .label { font-size: 15px; margin-top: 8px; opacity: 0.95; }
+.stat-card.blue { background: linear-gradient(135deg, #1a3a6b, #2a5298); }
+.stat-card.teal { background: linear-gradient(135deg, #16a085, #1abc9c); }
+.stat-card.gold { background: linear-gradient(135deg, #c79100, #d4af37); }
+.stat-card.red  { background: linear-gradient(135deg, #a93226, #c0392b); }
+
+/* ---------- กราฟแท่งแนวนอนอย่างง่าย ---------- */
+.bar-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+.bar-label { width: 150px; font-size: 15px; flex-shrink: 0; }
+.bar-track { flex: 1; background: #e3e9f2; border-radius: 6px; overflow: hidden; height: 26px; }
+.bar-fill {
+    background: linear-gradient(90deg, var(--accent), #e6c34a);
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding-right: 10px;
+    color: var(--primary);
+    font-weight: 600;
+    font-size: 13px;
+    min-width: 36px;
+}
+
+/* ---------- ฟอร์ม ---------- */
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 14px;
+}
+.form-group { display: flex; flex-direction: column; }
+.form-group label { font-size: 14px; font-weight: 600; margin-bottom: 4px; color: var(--text); }
+.form-group input, .form-group select, .form-group textarea {
+    padding: 9px 11px;
+    border: 1px solid #cdd6e4;
+    border-radius: 6px;
+    font-size: 15px;
+    font-family: inherit;
+}
+.form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+    outline: none;
+    border-color: var(--secondary);
+    box-shadow: 0 0 0 3px rgba(42, 82, 152, 0.12);
+}
+.form-group textarea { resize: vertical; min-height: 60px; }
+.form-actions { margin-top: 16px; display: flex; gap: 10px; }
+
+/* ---------- ปุ่ม ---------- */
+.btn {
+    border: none;
+    border-radius: 6px;
+    padding: 9px 18px;
+    font-size: 15px;
+    font-family: inherit;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.1s;
+    color: var(--white);
+}
+.btn:hover { opacity: 0.9; }
+.btn:active { transform: translateY(1px); }
+.btn-primary { background: var(--primary); }
+.btn-success { background: var(--success); }
+.btn-danger  { background: var(--danger); }
+.btn-muted   { background: var(--muted); }
+.btn-sm { padding: 5px 12px; font-size: 13px; }
+.btn-gold { background: var(--accent); color: var(--primary); font-weight: 600; }
+
+/* ---------- ตาราง ---------- */
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 15px; }
+thead th {
+    background: var(--primary);
+    color: var(--white);
+    padding: 11px 12px;
+    text-align: left;
+    font-weight: 600;
+    white-space: nowrap;
+}
+tbody td { padding: 10px 12px; border-bottom: 1px solid #e8edf4; }
+tbody tr:nth-child(even) { background: #f7f9fc; }
+tbody tr:hover { background: #eef3fb; }
+
+/* ---------- ป้ายสถานะ ---------- */
+.badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+}
+.badge-open { background: #fdebd0; color: #b9770e; }
+.badge-investigating { background: #d6eaf8; color: #2471a3; }
+.badge-closed { background: #d5f5e3; color: #1e8449; }
+.badge-scheduled { background: #eaecee; color: #566573; }
+.badge-onduty { background: #d6eaf8; color: #2471a3; }
+.badge-completed { background: #d5f5e3; color: #1e8449; }
+.badge-low { background: #d5f5e3; color: #1e8449; }
+.badge-medium { background: #fdebd0; color: #b9770e; }
+.badge-high { background: #fadbd8; color: #c0392b; }
+.badge-critical { background: #c0392b; color: #fff; }
+
+/* ---------- ข้อความแจ้งเตือน (flash) ---------- */
+.flash-area { margin-bottom: 18px; }
+.flash {
+    padding: 12px 18px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    font-size: 15px;
+    border-left: 4px solid;
+}
+.flash-success { background: #d5f5e3; color: #1e8449; border-color: #1e8449; }
+.flash-danger  { background: #fadbd8; color: #c0392b; border-color: #c0392b; }
+.flash-warning { background: #fdebd0; color: #b9770e; border-color: #e67e22; }
+
+/* ---------- ฟอร์มแก้ไขในตาราง (inline) ---------- */
+.inline-form { display: flex; gap: 6px; align-items: center; }
+.inline-form select { padding: 4px 8px; border-radius: 5px; border: 1px solid #cdd6e4; font-family: inherit; }
+
+/* ---------- หน้าเข้าสู่ระบบ / สมัครสมาชิก ---------- */
+.auth-wrap {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #1a3a6b, #2a5298);
+    padding: 20px;
+}
+.auth-box {
+    background: var(--white);
+    border-radius: 14px;
+    width: 100%;
+    max-width: 410px;
+    overflow: hidden;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+}
+.auth-header {
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    color: var(--white);
+    text-align: center;
+    padding: 32px 20px 24px;
+}
+.auth-header .icon { font-size: 50px; color: var(--accent); }
+.auth-header h1 { font-size: 21px; margin-top: 8px; }
+.auth-header .en { font-size: 11px; letter-spacing: 1px; color: var(--accent); margin-top: 2px; }
+.auth-body { padding: 28px 30px 32px; }
+.auth-body .form-group { margin-bottom: 16px; }
+.auth-body .btn { width: 100%; padding: 12px; font-size: 16px; font-weight: 600; }
+.auth-footer { text-align: center; margin-top: 16px; font-size: 14px; color: var(--muted); }
+.auth-footer a { color: var(--secondary); font-weight: 600; }
+.hint-box {
+    background: #f7f9fc;
+    border: 1px dashed #cdd6e4;
+    border-radius: 8px;
+    padding: 10px;
+    text-align: center;
+    font-size: 13px;
+    color: var(--muted);
+    margin-top: 16px;
+}
+
+/* ---------- รองรับหน้าจอมือถือ (responsive) ---------- */
+@media (max-width: 768px) {
+    .navbar { flex-wrap: wrap; height: auto; padding: 10px 16px; }
+    .navbar .brand { font-size: 16px; }
+    .navbar .nav-links { flex-wrap: wrap; width: 100%; margin-top: 8px; }
+    .navbar .nav-links a { font-size: 14px; padding: 6px 12px; }
+    .container { padding: 16px; }
+    .page-title { font-size: 22px; }
+    .bar-label { width: 100px; font-size: 13px; }
+}
+
+/* แถบท้ายหน้า */
+.footer { text-align: center; color: var(--muted); font-size: 13px; padding: 20px; }

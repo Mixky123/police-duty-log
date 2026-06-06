@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}แดชบอร์ด{% endblock %}
+
+{% block content %}
+<div class="page-title">แดชบอร์ดสรุปภาพรวม</div>
+<div class="page-subtitle">ภาพรวมข้อมูลกำลังพล การจัดเวร และเหตุการณ์ประจำวัน</div>
+
+{# การ์ดตัวเลขหลัก 4 ใบ #}
+<div class="stat-grid">
+    <div class="stat-card blue">
+        <div class="num">{{ stats.total_officers }}</div>
+        <div class="label">เจ้าหน้าที่ทั้งหมด (นาย)</div>
+    </div>
+    <div class="stat-card teal">
+        <div class="num">{{ stats.total_duties }}</div>
+        <div class="label">รายการเวรทั้งหมด</div>
+    </div>
+    <div class="stat-card gold">
+        <div class="num">{{ stats.total_incidents }}</div>
+        <div class="label">เหตุการณ์ทั้งหมด</div>
+    </div>
+    <div class="stat-card red">
+        <div class="num">{{ stats.open_incidents }}</div>
+        <div class="label">เหตุที่ยังไม่ปิดเคส</div>
+    </div>
+</div>
+
+{# กราฟแท่งแนวนอน: สถิติเหตุการณ์แยกตามประเภท #}
+<div class="card">
+    <h2>สถิติเหตุการณ์แยกตามประเภท</h2>
+    {% if stats.by_category %}
+        {% for category, count in stats.by_category.items() %}
+        <div class="bar-row">
+            <div class="bar-label">{{ category }}</div>
+            <div class="bar-track">
+                {# คำนวณความกว้างของแถบเป็นเปอร์เซ็นต์เทียบกับค่าสูงสุด #}
+                <div class="bar-fill" style="width: {{ (count / max_count * 100) | round(0, 'floor') }}%;">
+                    {{ count }}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <p style="color:#95a5a6;">ยังไม่มีข้อมูลเหตุการณ์ในระบบ — เริ่มบันทึกได้ที่เมนู "บันทึกเหตุ"</p>
+    {% endif %}
+</div>
+
+{# สรุปตามระดับความรุนแรง #}
+<div class="card">
+    <h2>สถิติเหตุการณ์แยกตามระดับความรุนแรง</h2>
+    {% if stats.by_severity %}
+        <div style="display:flex; gap:12px; flex-wrap:wrap;">
+        {% for severity, count in stats.by_severity.items() %}
+            <div style="background:#f7f9fc; border-radius:8px; padding:14px 20px; min-width:120px; text-align:center;">
+                <div style="font-size:26px; font-weight:700; color:var(--primary);">{{ count }}</div>
+                <div style="font-size:14px; color:var(--muted);">{{ severity }}</div>
+            </div>
+        {% endfor %}
+        </div>
+    {% else %}
+        <p style="color:#95a5a6;">ยังไม่มีข้อมูล</p>
+    {% endif %}
+</div>
+{% endblock %}

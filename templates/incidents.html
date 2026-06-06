@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% block title %}บันทึกเหตุประจำวัน{% endblock %}
+
+{% block content %}
+<div class="page-title">บันทึกเหตุการณ์ประจำวัน</div>
+<div class="page-subtitle">บันทึกและติดตามสถานะเหตุการณ์ที่เกิดขึ้นในแต่ละวัน</div>
+
+{# ฟอร์มบันทึกเหตุการณ์ใหม่ #}
+<div class="card">
+    <h2>บันทึกเหตุการณ์ใหม่</h2>
+    <form method="POST" action="{{ url_for('incidents_add') }}">
+        <div class="form-grid">
+            <div class="form-group">
+                <label>วัน-เวลาที่เกิดเหตุ</label>
+                <input type="datetime-local" name="incident_time" required>
+            </div>
+            <div class="form-group">
+                <label>ประเภทเหตุการณ์</label>
+                <select name="category" required>
+                    <option value="">-- เลือกประเภท --</option>
+                    {% for c in ["ลักทรัพย์","ทำร้ายร่างกาย","อุบัติเหตุจราจร","ยาเสพติด","ทะเลาะวิวาท","เหตุทั่วไป","อื่น ๆ"] %}
+                    <option value="{{ c }}">{{ c }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label>ระดับความรุนแรง</label>
+                <select name="severity" required>
+                    {% for s in ["ต่ำ","ปานกลาง","สูง","วิกฤต"] %}
+                    <option value="{{ s }}">{{ s }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label>สถานที่เกิดเหตุ</label>
+                <input type="text" name="location" required>
+            </div>
+            <div class="form-group">
+                <label>เจ้าหน้าที่ผู้บันทึก (ถ้ามี)</label>
+                <select name="officer_id">
+                    <option value="">-- ไม่ระบุ --</option>
+                    {% for o in officers %}
+                    <option value="{{ o.id }}">{{ o.rank }} {{ o.full_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+        <div class="form-group" style="margin-top:14px;">
+            <label>รายละเอียดเหตุการณ์</label>
+            <textarea name="description" rows="3" required></textarea>
+        </div>
+        <div class="form-actions">
+            <button type="submit" class="btn btn-success">บันทึกเหตุการณ์</button>
+        </div>
+    </form>
+</div>
+
+{# ตารางเหตุการณ์ทั้งหมด #}
+<div class="card">
+    <h2>บันทึกเหตุการณ์ทั้งหมด ({{ incidents|length }} รายการ)</h2>
+    <div class="table-wrap">
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th><th>เวลา</th><th>ประเภท</th><th>ความรุนแรง</th>
+                <th>สถานที่</th><th>รายละเอียด</th><th>ผู้บันทึก</th><th>สถานะ</th><th>จัดการ</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for i in incidents %}
+            <tr>
+                <td>{{ i.id }}</td>
+                <td>{{ i.incident_time }}</td>
+                <td>{{ i.category }}</td>
+                <td>
+                    {% if i.severity == 'ต่ำ' %}<span class="badge badge-low">ต่ำ</span>
+                    {% elif i.severity == 'ปานกลาง' %}<span class="badge badge-medium">ปานกลาง</span>
+                    {% elif i.severity == 'สูง' %}<span class="badge badge-high">สูง</span>
+                    {% else %}<span class="badge badge-critical">วิกฤต</span>{% endif %}
+                </td>
+                <td>{{ i.location }}</td>
+                <td>{{ i.description }}</td>
+                <td>{{ i.officer_name or "-" }}</td>
+                <td>
+                    {% if i.status == 'open' %}<span class="badge badge-open">open</span>
+                    {% elif i.status == 'investigating' %}<span class="badge badge-investigating">investigating</span>
+                    {% else %}<span class="badge badge-closed">closed</span>{% endif %}
+                </td>
+                <td>
+                    <div class="inline-form">
+                        <form method="POST" action="{{ url_for('incidents_status', incident_id=i.id) }}" class="inline-form">
+                            <select name="status" onchange="this.form.submit()">
+                                <option value="open" {{ 'selected' if i.status=='open' }}>open</option>
+                                <option value="investigating" {{ 'selected' if i.status=='investigating' }}>investigating</option>
+                                <option value="closed" {{ 'selected' if i.status=='closed' }}>closed</option>
+                            </select>
+                        </form>
+                        <form method="POST" action="{{ url_for('incidents_delete', incident_id=i.id) }}"
+                              onsubmit="return confirm('ต้องการลบบันทึกเหตุการณ์นี้หรือไม่?');">
+                            <button type="submit" class="btn btn-danger btn-sm">ลบ</button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="9" style="text-align:center; color:#95a5a6;">ยังไม่มีบันทึกเหตุการณ์</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
+</div>
+{% endblock %}

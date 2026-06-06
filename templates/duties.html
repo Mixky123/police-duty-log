@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% block title %}ตารางเวร{% endblock %}
+
+{% block content %}
+<div class="page-title">จัดการตารางเวร</div>
+<div class="page-subtitle">จัดเวรให้เจ้าหน้าที่ และติดตามสถานะการปฏิบัติหน้าที่</div>
+
+{# ฟอร์มจัดเวรใหม่ #}
+<div class="card">
+    <h2>จัดเวรใหม่</h2>
+    {% if officers %}
+    <form method="POST" action="{{ url_for('duties_add') }}">
+        <div class="form-grid">
+            <div class="form-group">
+                <label>เจ้าหน้าที่ผู้รับเวร</label>
+                <select name="officer_id" required>
+                    <option value="">-- เลือกเจ้าหน้าที่ --</option>
+                    {% for o in officers %}
+                    <option value="{{ o.id }}">{{ o.rank }} {{ o.full_name }} ({{ o.badge_no }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label>วันที่</label>
+                <input type="date" name="duty_date" required>
+            </div>
+            <div class="form-group">
+                <label>ผลัดเวร</label>
+                <select name="shift" required>
+                    <option value="">-- เลือกผลัด --</option>
+                    <option value="ผลัดเช้า (08:00-16:00)">ผลัดเช้า (08:00-16:00)</option>
+                    <option value="ผลัดบ่าย (16:00-24:00)">ผลัดบ่าย (16:00-24:00)</option>
+                    <option value="ผลัดดึก (00:00-08:00)">ผลัดดึก (00:00-08:00)</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>สถานที่/จุดตรวจ</label>
+                <input type="text" name="location" required>
+            </div>
+            <div class="form-group">
+                <label>สถานะ</label>
+                <select name="status">
+                    <option value="scheduled">scheduled (จัดเวรแล้ว)</option>
+                    <option value="on-duty">on-duty (กำลังปฏิบัติ)</option>
+                    <option value="completed">completed (เสร็จสิ้น)</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>หมายเหตุ</label>
+                <input type="text" name="note">
+            </div>
+        </div>
+        <div class="form-actions">
+            <button type="submit" class="btn btn-success">บันทึกเวร</button>
+        </div>
+    </form>
+    {% else %}
+    <p style="color:var(--danger);">ยังไม่มีรายชื่อเจ้าหน้าที่ในระบบ กรุณาเพิ่มเจ้าหน้าที่ที่เมนู "เจ้าหน้าที่" ก่อนจัดเวร</p>
+    {% endif %}
+</div>
+
+{# ตารางเวรทั้งหมด #}
+<div class="card">
+    <h2>ตารางเวรทั้งหมด ({{ duties|length }} รายการ)</h2>
+    <div class="table-wrap">
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th><th>วันที่</th><th>เจ้าหน้าที่</th><th>ผลัด</th>
+                <th>สถานที่</th><th>สถานะ</th><th>หมายเหตุ</th><th>จัดการ</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for d in duties %}
+            <tr>
+                <td>{{ d.id }}</td>
+                <td>{{ d.duty_date }}</td>
+                <td>{{ d.officer_rank }} {{ d.officer_name }}</td>
+                <td>{{ d.shift }}</td>
+                <td>{{ d.location }}</td>
+                <td>
+                    {% if d.status == 'scheduled' %}<span class="badge badge-scheduled">scheduled</span>
+                    {% elif d.status == 'on-duty' %}<span class="badge badge-onduty">on-duty</span>
+                    {% else %}<span class="badge badge-completed">completed</span>{% endif %}
+                </td>
+                <td>{{ d.note or "-" }}</td>
+                <td>
+                    <div class="inline-form">
+                        {# ฟอร์มเปลี่ยนสถานะแบบเร็ว #}
+                        <form method="POST" action="{{ url_for('duties_status', duty_id=d.id) }}" class="inline-form">
+                            <select name="status" onchange="this.form.submit()">
+                                <option value="scheduled" {{ 'selected' if d.status=='scheduled' }}>scheduled</option>
+                                <option value="on-duty" {{ 'selected' if d.status=='on-duty' }}>on-duty</option>
+                                <option value="completed" {{ 'selected' if d.status=='completed' }}>completed</option>
+                            </select>
+                        </form>
+                        <form method="POST" action="{{ url_for('duties_delete', duty_id=d.id) }}"
+                              onsubmit="return confirm('ต้องการลบรายการเวรนี้หรือไม่?');">
+                            <button type="submit" class="btn btn-danger btn-sm">ลบ</button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="8" style="text-align:center; color:#95a5a6;">ยังไม่มีรายการเวร</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
+</div>
+{% endblock %}

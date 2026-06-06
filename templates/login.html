@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}เข้าสู่ระบบ{% endblock %}
+
+{% block content %}
+<div class="auth-wrap">
+    <div class="auth-box">
+        <div class="auth-header">
+            <div class="icon">🛡</div>
+            <h1>ระบบจัดการเวรและบันทึกเหตุ</h1>
+            <div class="en">POLICE DUTY &amp; INCIDENT LOG SYSTEM</div>
+        </div>
+        <div class="auth-body">
+            {# แสดง flash message ภายในกล่อง login ด้วย #}
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% for category, message in messages %}
+                    <div class="flash flash-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endwith %}
+
+            <form method="POST" action="{{ url_for('login') }}">
+                <div class="form-group">
+                    <label for="username">ชื่อผู้ใช้ (Username)</label>
+                    <input type="text" id="username" name="username" value="admin" required autofocus>
+                </div>
+                <div class="form-group">
+                    <label for="password">รหัสผ่าน (Password)</label>
+                    <input type="password" id="password" name="password" value="admin123" required>
+                </div>
+                <button type="submit" class="btn btn-primary">เข้าสู่ระบบ</button>
+            </form>
+
+            <div class="auth-footer">
+                ยังไม่มีบัญชี? <a href="{{ url_for('register') }}">สมัครบัญชีผู้ใช้ใหม่</a>
+            </div>
+            <div class="hint-box">
+                บัญชีเริ่มต้นสำหรับทดสอบ<br>
+                Username: <b>admin</b> &nbsp; Password: <b>admin123</b>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% block title %}จัดการเจ้าหน้าที่{% endblock %}
+
+{% block content %}
+<div class="page-title">จัดการข้อมูลเจ้าหน้าที่</div>
+<div class="page-subtitle">เพิ่ม แก้ไข และลบข้อมูลกำลังพลในสังกัด</div>
+
+{# ฟอร์มเพิ่มเจ้าหน้าที่ใหม่ #}
+<div class="card">
+    <h2>เพิ่มเจ้าหน้าที่ใหม่</h2>
+    <form method="POST" action="{{ url_for('officers_add') }}">
+        <div class="form-grid">
+            <div class="form-group">
+                <label>ยศ</label>
+                <select name="rank" required>
+                    <option value="">-- เลือกยศ --</option>
+                    {% for r in ["พล.ต.อ.","พล.ต.ท.","พล.ต.ต.","พ.ต.อ.","พ.ต.ท.","พ.ต.ต.","ร.ต.อ.","ร.ต.ท.","ร.ต.ต.","ด.ต.","จ.ส.ต.","ส.ต.อ.","ส.ต.ท.","ส.ต.ต."] %}
+                    <option value="{{ r }}">{{ r }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label>ชื่อ-สกุล</label>
+                <input type="text" name="full_name" required>
+            </div>
+            <div class="form-group">
+                <label>เลขประจำตัว (Badge)</label>
+                <input type="text" name="badge_no" required>
+            </div>
+            <div class="form-group">
+                <label>เบอร์โทรศัพท์</label>
+                <input type="text" name="phone">
+            </div>
+            <div class="form-group">
+                <label>สังกัด/สถานี</label>
+                <input type="text" name="station">
+            </div>
+        </div>
+        <div class="form-actions">
+            <button type="submit" class="btn btn-success">บันทึกเจ้าหน้าที่</button>
+        </div>
+    </form>
+</div>
+
+{# ตารางรายชื่อเจ้าหน้าที่ทั้งหมด #}
+<div class="card">
+    <h2>รายชื่อเจ้าหน้าที่ทั้งหมด ({{ officers|length }} นาย)</h2>
+    <div class="table-wrap">
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th><th>ยศ</th><th>ชื่อ-สกุล</th><th>เลขประจำตัว</th>
+                <th>โทรศัพท์</th><th>สังกัด</th><th>จัดการ</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for o in officers %}
+            <tr>
+                <td>{{ o.id }}</td>
+                <td>{{ o.rank }}</td>
+                <td>{{ o.full_name }}</td>
+                <td>{{ o.badge_no }}</td>
+                <td>{{ o.phone or "-" }}</td>
+                <td>{{ o.station or "-" }}</td>
+                <td>
+                    <div class="inline-form">
+                        <button type="button" class="btn btn-primary btn-sm"
+                                onclick="toggleEdit('{{ o.id }}')">แก้ไข</button>
+                        <form method="POST" action="{{ url_for('officers_delete', officer_id=o.id) }}"
+                              onsubmit="return confirm('ต้องการลบเจ้าหน้าที่รายนี้หรือไม่? เวรที่เกี่ยวข้องจะถูกลบด้วย');">
+                            <button type="submit" class="btn btn-danger btn-sm">ลบ</button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+            {# แถวฟอร์มแก้ไข (ซ่อนไว้ก่อน คลิกแก้ไขจึงแสดง) #}
+            <tr id="edit-{{ o.id }}" style="display:none; background:#fff8e1;">
+                <td colspan="7">
+                    <form method="POST" action="{{ url_for('officers_edit', officer_id=o.id) }}">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>ยศ</label>
+                                <select name="rank">
+                                    {% for r in ["พล.ต.อ.","พล.ต.ท.","พล.ต.ต.","พ.ต.อ.","พ.ต.ท.","พ.ต.ต.","ร.ต.อ.","ร.ต.ท.","ร.ต.ต.","ด.ต.","จ.ส.ต.","ส.ต.อ.","ส.ต.ท.","ส.ต.ต."] %}
+                                    <option value="{{ r }}" {{ 'selected' if r == o.rank }}>{{ r }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="form-group"><label>ชื่อ-สกุล</label><input type="text" name="full_name" value="{{ o.full_name }}"></div>
+                            <div class="form-group"><label>เลขประจำตัว</label><input type="text" name="badge_no" value="{{ o.badge_no }}"></div>
+                            <div class="form-group"><label>โทรศัพท์</label><input type="text" name="phone" value="{{ o.phone or '' }}"></div>
+                            <div class="form-group"><label>สังกัด</label><input type="text" name="station" value="{{ o.station or '' }}"></div>
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-success btn-sm">บันทึกการแก้ไข</button>
+                            <button type="button" class="btn btn-muted btn-sm" onclick="toggleEdit('{{ o.id }}')">ยกเลิก</button>
+                        </div>
+                    </form>
+                </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="7" style="text-align:center; color:#95a5a6;">ยังไม่มีข้อมูลเจ้าหน้าที่</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
+</div>
+
+<script>
+// สลับการแสดง/ซ่อนแถวฟอร์มแก้ไข
+function toggleEdit(id) {
+    var row = document.getElementById('edit-' + id);
+    row.style.display = (row.style.display === 'none') ? 'table-row' : 'none';
+}
+</script>
+{% endblock %}

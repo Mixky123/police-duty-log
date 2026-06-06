@@ -1,0 +1,27 @@
+# render.yaml — ไฟล์ตั้งค่าสำหรับ deploy ขึ้น Render แบบอัตโนมัติ (Blueprint)
+# เมื่อเชื่อม GitHub repo นี้กับ Render และเลือก "Blueprint" ระบบจะอ่านไฟล์นี้
+# แล้วสร้างทั้งเว็บเซอร์วิสและฐานข้อมูล PostgreSQL ให้อัตโนมัติ
+
+services:
+  # เว็บเซอร์วิส (Flask + gunicorn)
+  - type: web
+    name: police-duty-log
+    runtime: python
+    plan: free
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "gunicorn app:app"
+    envVars:
+      # คีย์ลับของ session ให้ Render สุ่มสร้างให้อัตโนมัติ
+      - key: SECRET_KEY
+        generateValue: true
+      # ดึง connection string ของฐานข้อมูลด้านล่างมาใส่อัตโนมัติ
+      - key: DATABASE_URL
+        fromDatabase:
+          name: police-duty-db
+          property: connectionString
+
+# ฐานข้อมูล PostgreSQL ออนไลน์
+databases:
+  - name: police-duty-db
+    plan: free
+    databaseName: police_duty

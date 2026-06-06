@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}ระบบจัดการเวรตำรวจ{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    {# แถบเมนูด้านบน แสดงเฉพาะเมื่อเข้าสู่ระบบแล้ว #}
+    {% if session.get('user_id') %}
+    <nav class="navbar">
+        <div class="brand">
+            <span class="badge-icon">🛡</span>
+            <span>ระบบจัดการเวรและบันทึกเหตุประจำวันของตำรวจ</span>
+        </div>
+        <div class="nav-links">
+            <a href="{{ url_for('dashboard') }}" class="{{ 'active' if active=='dashboard' }}">แดชบอร์ด</a>
+            <a href="{{ url_for('officers') }}" class="{{ 'active' if active=='officers' }}">เจ้าหน้าที่</a>
+            <a href="{{ url_for('duties') }}" class="{{ 'active' if active=='duties' }}">ตารางเวร</a>
+            <a href="{{ url_for('incidents') }}" class="{{ 'active' if active=='incidents' }}">บันทึกเหตุ</a>
+            <span class="user-box">👤 {{ session.get('username') }}</span>
+            <a href="{{ url_for('logout') }}" class="logout-btn">ออกจากระบบ</a>
+        </div>
+    </nav>
+    {% endif %}
+
+    <div class="container">
+        {# พื้นที่แสดงข้อความแจ้งเตือน (flash messages) #}
+        <div class="flash-area">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% for category, message in messages %}
+                    <div class="flash flash-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endwith %}
+        </div>
+
+        {% block content %}{% endblock %}
+    </div>
+
+    {% if session.get('user_id') %}
+    <div class="footer">
+        ระบบจัดการเวรและบันทึกเหตุประจำวันของตำรวจ | รายวิชา 341314 Computer Programming
+    </div>
+    {% endif %}
+</body>
+</html>
