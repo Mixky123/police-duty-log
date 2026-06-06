@@ -132,9 +132,26 @@ def dashboard():
 @app.route("/officers")
 @login_required
 def officers():
-    """แสดงรายชื่อเจ้าหน้าที่ทั้งหมด"""
+    """แสดงรายชื่อเจ้าหน้าที่ทั้งหมด พร้อมการเรียงลำดับ"""
+    sort_by = request.args.get("sort", "id")  # เรียงตาม: id, rank, full_name, badge_no, station
+    order = request.args.get("order", "asc")  # asc หรือ desc
+
     all_officers = db.get_all_officers()
-    return render_template("officers.html", officers=all_officers)
+
+    # เรียงข้อมูล
+    if sort_by == "rank":
+        rank_order = ["พ.ต.อ.", "พ.ต.ท.", "พ.ต.ต.", "ร.ต.อ.", "ร.ต.ท.", "ร.ต.ต.",
+                      "ด.ต.", "ส.ต.อ.", "ส.ต.ท.", "ส.ต.ต."]
+        all_officers.sort(key=lambda x: rank_order.index(x['rank']) if x['rank'] in rank_order else 999)
+    elif sort_by in ["full_name", "badge_no", "station"]:
+        all_officers.sort(key=lambda x: x[sort_by] or "")
+    else:
+        all_officers.sort(key=lambda x: x['id'])
+
+    if order == "desc":
+        all_officers.reverse()
+
+    return render_template("officers.html", officers=all_officers, sort_by=sort_by, order=order)
 
 
 @app.route("/officers/add", methods=["POST"])
@@ -184,10 +201,31 @@ def officers_delete(officer_id):
 @app.route("/duties")
 @login_required
 def duties():
-    """แสดงตารางเวรทั้งหมด พร้อมรายชื่อเจ้าหน้าที่สำหรับฟอร์มจัดเวร"""
+    """แสดงตารางเวรทั้งหมด พร้อมรายชื่อเจ้าหน้าที่สำหรับฟอร์มจัดเวร และการเรียงลำดับ"""
+    sort_by = request.args.get("sort", "duty_date")  # เรียงตาม: duty_date, shift, status, officer_name
+    order = request.args.get("order", "desc")  # asc หรือ desc
+
     all_duties = db.get_all_duties()
     all_officers = db.get_all_officers()
-    return render_template("duties.html", duties=all_duties, officers=all_officers)
+
+    # เรียงข้อมูล
+    if sort_by == "duty_date":
+        all_duties.sort(key=lambda x: x['duty_date'] or "")
+    elif sort_by == "shift":
+        shift_order = ["เช้า", "บ่าย", "ดึก"]
+        all_duties.sort(key=lambda x: shift_order.index(x['shift']) if x['shift'] in shift_order else 999)
+    elif sort_by == "status":
+        status_order = ["scheduled", "in_progress", "completed", "absent"]
+        all_duties.sort(key=lambda x: status_order.index(x['status']) if x['status'] in status_order else 999)
+    elif sort_by == "officer_name":
+        all_duties.sort(key=lambda x: x['officer_name'] or "")
+    else:
+        all_duties.sort(key=lambda x: x['id'])
+
+    if order == "desc":
+        all_duties.reverse()
+
+    return render_template("duties.html", duties=all_duties, officers=all_officers, sort_by=sort_by, order=order)
 
 
 @app.route("/duties/add", methods=["POST"])
@@ -232,11 +270,35 @@ def duties_delete(duty_id):
 @app.route("/incidents")
 @login_required
 def incidents():
-    """แสดงบันทึกเหตุการณ์ทั้งหมด พร้อมรายชื่อเจ้าหน้าที่สำหรับฟอร์ม"""
+    """แสดงบันทึกเหตุการณ์ทั้งหมด พร้อมรายชื่อเจ้าหน้าที่สำหรับฟอร์ม และการเรียงลำดับ"""
+    sort_by = request.args.get("sort", "incident_time")  # เรียงตาม: incident_time, category, severity, status
+    order = request.args.get("order", "desc")  # asc หรือ desc
+
     all_incidents = db.get_all_incidents()
     all_officers = db.get_all_officers()
+
+    # เรียงข้อมูล
+    if sort_by == "incident_time":
+        all_incidents.sort(key=lambda x: x['incident_time'] or "")
+    elif sort_by == "category":
+        all_incidents.sort(key=lambda x: x['category'] or "")
+    elif sort_by == "severity":
+        severity_order = ["วิกฤต", "สูง", "ปานกลาง", "ต่ำ"]
+        all_incidents.sort(key=lambda x: severity_order.index(x['severity']) if x['severity'] in severity_order else 999)
+    elif sort_by == "status":
+        status_order = ["pending", "investigating", "resolved", "closed"]
+        all_incidents.sort(key=lambda x: status_order.index(x['status']) if x['status'] in status_order else 999)
+    elif sort_by == "officer_name":
+        all_incidents.sort(key=lambda x: x['officer_name'] or "")
+    else:
+        all_incidents.sort(key=lambda x: x['id'])
+
+    if order == "desc":
+        all_incidents.reverse()
+
     return render_template("incidents.html",
-                           incidents=all_incidents, officers=all_officers)
+                           incidents=all_incidents, officers=all_officers,
+                           sort_by=sort_by, order=order)
 
 
 @app.route("/incidents/add", methods=["POST"])
@@ -383,6 +445,36 @@ def reports_export():
     except Exception as e:
         flash(f"เกิดข้อผิดพลาดในการสร้างรายงาน: {str(e)}", "danger")
         return redirect(url_for("reports"))
+
+
+@app.route("/incidents/export-all", methods=["POST"])
+@login_required
+def incidents_export_all():
+    """ส่งออกรายงาน PDF ของเหตุการณ์ทั้งหมดในระบบ"""
+    try:
+        all_incidents = db.get_all_incidents()
+
+        if not all_incidents:
+            flash("ไม่มีข้อมูลเหตุการณ์ในระบบ", "warning")
+            return redirect(url_for("incidents"))
+
+        # สร้าง PDF (ใช้เดือน/ปีปัจจุบัน สำหรับหัวรายงาน)
+        from datetime import datetime
+        now = datetime.now()
+        pdf_buffer = create_monthly_report_pdf(all_incidents, now.year, now.month)
+
+        filename = f"รายงานเหตุการณ์ทั้งหมด_{now.strftime('%Y%m%d')}.pdf"
+
+        return send_file(
+            pdf_buffer,
+            mimetype="application/pdf",
+            as_attachment=True,
+            download_name=filename
+        )
+
+    except Exception as e:
+        flash(f"เกิดข้อผิดพลาดในการสร้างรายงาน: {str(e)}", "danger")
+        return redirect(url_for("incidents"))
 
 
 # ==========================================================

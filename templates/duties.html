@@ -61,7 +61,31 @@
 
 {# ตารางเวรทั้งหมด #}
 <div class="card">
-    <h2>ตารางเวรทั้งหมด ({{ duties|length }} รายการ)</h2>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <h2>ตารางเวรทั้งหมด ({{ duties|length }} รายการ)</h2>
+        <div class="btn-group" style="border: 1px solid #cbd5e1; border-radius: 8px; overflow: hidden;">
+            <a href="{{ url_for('duties', sort='duty_date', order='desc') }}"
+               class="btn btn-outline {% if sort_by == 'duty_date' %}active{% endif %}"
+               style="border-radius: 0; border-right: 1px solid #cbd5e1;">
+                📅 วันที่
+            </a>
+            <a href="{{ url_for('duties', sort='shift', order='asc') }}"
+               class="btn btn-outline {% if sort_by == 'shift' %}active{% endif %}"
+               style="border-radius: 0; border-right: 1px solid #cbd5e1;">
+                ⏰ ผลัด
+            </a>
+            <a href="{{ url_for('duties', sort='status', order='asc') }}"
+               class="btn btn-outline {% if sort_by == 'status' %}active{% endif %}"
+               style="border-radius: 0; border-right: 1px solid #cbd5e1;">
+                📊 สถานะ
+            </a>
+            <a href="{{ url_for('duties', sort='officer_name', order='asc') }}"
+               class="btn btn-outline {% if sort_by == 'officer_name' %}active{% endif %}"
+               style="border-radius: 0;">
+                👮 เจ้าหน้าที่
+            </a>
+        </div>
+    </div>
     <div class="table-wrap">
     <table>
         <thead>

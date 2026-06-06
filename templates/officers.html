@@ -44,7 +44,31 @@
 
 {# ตารางรายชื่อเจ้าหน้าที่ทั้งหมด #}
 <div class="card">
-    <h2>รายชื่อเจ้าหน้าที่ทั้งหมด ({{ officers|length }} นาย)</h2>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <h2>รายชื่อเจ้าหน้าที่ทั้งหมด ({{ officers|length }} นาย)</h2>
+        <div style="display: flex; gap: 1rem;">
+            <button type="button" class="btn btn-secondary" onclick="document.getElementById('generateModal').style.display='flex'">
+                ✨ Generate ข้อมูล
+            </button>
+            <div class="btn-group" style="border: 1px solid #cbd5e1; border-radius: 8px; overflow: hidden;">
+                <a href="{{ url_for('officers', sort='rank', order='asc') }}"
+                   class="btn btn-outline {% if sort_by == 'rank' %}active{% endif %}"
+                   style="border-radius: 0; border-right: 1px solid #cbd5e1;">
+                    🎖️ เรียงตามยศ
+                </a>
+                <a href="{{ url_for('officers', sort='full_name', order='asc') }}"
+                   class="btn btn-outline {% if sort_by == 'full_name' %}active{% endif %}"
+                   style="border-radius: 0; border-right: 1px solid #cbd5e1;">
+                    📝 เรียงตามชื่อ
+                </a>
+                <a href="{{ url_for('officers', sort='station', order='asc') }}"
+                   class="btn btn-outline {% if sort_by == 'station' %}active{% endif %}"
+                   style="border-radius: 0;">
+                    🏢 เรียงตามสถานี
+                </a>
+            </div>
+        </div>
+    </div>
     <div class="table-wrap">
     <table>
         <thead>
@@ -103,6 +127,30 @@
             {% endfor %}
         </tbody>
     </table>
+    </div>
+</div>
+
+{# Modal สำหรับ Generate ข้อมูล #}
+<div id="generateModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 1000;">
+    <div style="background: white; padding: 2rem; border-radius: 12px; max-width: 500px; width: 90%;">
+        <h2 style="margin-top: 0; color: #1e40af;">✨ Generate เจ้าหน้าที่</h2>
+        <p style="color: #64748b;">สร้างข้อมูลเจ้าหน้าที่สุ่มพร้อมยศ ชื่อ เลขตำรวจ และสถานี</p>
+
+        <form method="POST" action="{{ url_for('generate_officers') }}">
+            <div class="form-group">
+                <label>จำนวนที่ต้องการสร้าง (1-100 คน)</label>
+                <input type="number" name="count" min="1" max="100" value="10" required class="form-control">
+            </div>
+
+            <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+                <button type="submit" class="btn btn-primary" style="flex: 1;">สร้างข้อมูล</button>
+                <button type="button" class="btn btn-muted" style="flex: 1;" onclick="document.getElementById('generateModal').style.display='none'">ยกเลิก</button>
+            </div>
+        </form>
+
+        <div style="margin-top: 1rem; padding: 1rem; background: #fef3c7; border-radius: 8px; font-size: 0.9rem;">
+            <strong>⚠️ หมายเหตุ:</strong> ถ้าเลขตำรวจซ้ำจะข้ามการสร้างรายการนั้น
+        </div>
     </div>
 </div>
 

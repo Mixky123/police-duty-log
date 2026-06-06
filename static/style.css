@@ -160,8 +160,45 @@ a { text-decoration: none; color: inherit; }
 .btn-success { background: var(--success); }
 .btn-danger  { background: var(--danger); }
 .btn-muted   { background: var(--muted); }
+.btn-secondary { background: var(--secondary); }
 .btn-sm { padding: 5px 12px; font-size: 13px; }
 .btn-gold { background: var(--accent); color: var(--primary); font-weight: 600; }
+
+/* ปุ่มแบบขอบอย่างเดียว (outline) */
+.btn-outline {
+    background: white;
+    color: var(--text);
+    border: 1px solid #cbd5e1;
+    padding: 8px 16px;
+    font-size: 14px;
+    text-decoration: none;
+    display: inline-block;
+    transition: all 0.2s;
+}
+.btn-outline:hover {
+    background: #f3f4f6;
+    opacity: 1;
+}
+.btn-outline.active {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+
+/* กลุ่มปุ่มติดกัน */
+.btn-group {
+    display: inline-flex;
+}
+
+/* Control สำหรับ form ทั่วไป */
+.form-control {
+    padding: 9px 11px;
+    border: 1px solid #cdd6e4;
+    border-radius: 6px;
+    font-size: 15px;
+    font-family: inherit;
+    width: 100%;
+}
 
 /* ---------- ตาราง ---------- */
 .table-wrap { overflow-x: auto; }
