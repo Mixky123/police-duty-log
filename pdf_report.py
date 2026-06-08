@@ -151,7 +151,7 @@ def create_monthly_report_pdf(incidents, year, month, output_path=None):
         ['ประเภทข้อมูล', 'จำนวน'],
         ['จำนวนเหตุการณ์ทั้งหมด', str(total_incidents)],
         ['', ''],
-        ['แยกตามประเภท:', ''],
+        ['แยกตาม พรบ:', ''],
     ]
 
     for cat, count in sorted(by_category.items(), key=lambda x: x[1], reverse=True):
@@ -202,11 +202,12 @@ def create_monthly_report_pdf(incidents, year, month, output_path=None):
         elements.append(Spacer(1, 0.3*cm))
 
         # ตารางรายละเอียด
-        detail_data = [['วันที่-เวลา', 'ประเภท', 'ความรุนแรง', 'สถานที่', 'เจ้าหน้าที่']]
+        detail_data = [['วันที่-เวลา', 'พรบ', 'มาตรา', 'ความรุนแรง', 'สถานที่', 'เจ้าหน้าที่']]
 
         for inc in incidents:
             time_str = inc.get('incident_time', '')[:16]  # YYYY-MM-DD HH:MM
-            category = inc.get('category', '')
+            law = inc.get('law') or inc.get('category', '')
+            section = inc.get('section', '') or '-'
             severity = inc.get('severity', '')
             location = inc.get('location', '')
             officer = inc.get('officer_name', '')
@@ -215,13 +216,14 @@ def create_monthly_report_pdf(incidents, year, month, output_path=None):
 
             detail_data.append([
                 time_str,
-                category,
+                law[:18] + '...' if len(law) > 18 else law,
+                section[:18] + '...' if len(section) > 18 else section,
                 severity,
-                location[:20] + '...' if len(location) > 20 else location,
-                officer[:15] + '...' if len(officer) > 15 else officer
+                location[:16] + '...' if len(location) > 16 else location,
+                officer[:14] + '...' if len(officer) > 14 else officer
             ])
 
-        detail_table = Table(detail_data, colWidths=[3.5*cm, 3*cm, 2.5*cm, 4*cm, 4*cm])
+        detail_table = Table(detail_data, colWidths=[2.6*cm, 3.2*cm, 3.2*cm, 1.8*cm, 2.9*cm, 3.3*cm])
         detail_table.setStyle(TableStyle([
             ('FONTNAME', (0, 0), (-1, -1), thai_font),
             ('FONTSIZE', (0, 0), (-1, -1), 9),
@@ -272,7 +274,9 @@ def test_pdf_generation():
     test_incidents = [
         {
             'incident_time': '2026-06-01 08:30',
-            'category': 'อุบัติเหตุจราจร',
+            'category': 'ประมวลกฎหมายอาญา',
+            'law': 'ประมวลกฎหมายอาญา',
+            'section': 'มาตรา 334 (ลักทรัพย์)',
             'severity': 'ปานกลาง',
             'location': 'สี่แยกกลางเมือง',
             'status': 'resolved',
@@ -281,7 +285,9 @@ def test_pdf_generation():
         },
         {
             'incident_time': '2026-06-02 14:15',
-            'category': 'ลักทรัพย์',
+            'category': 'พ.ร.บ.ยาเสพติดให้โทษ',
+            'law': 'พ.ร.บ.ยาเสพติดให้โทษ',
+            'section': 'มาตรา 66 (จำหน่าย/ครอบครองเพื่อจำหน่าย)',
             'severity': 'สูง',
             'location': 'ห้างสรรพสินค้า',
             'status': 'investigating',

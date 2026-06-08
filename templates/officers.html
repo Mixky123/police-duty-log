@@ -24,7 +24,7 @@
                 <input type="text" name="full_name" required>
             </div>
             <div class="form-group">
-                <label>เลขประจำตัว (Badge)</label>
+                <label>เลขประจำตัว</label>
                 <input type="text" name="badge_no" required>
             </div>
             <div class="form-group">
@@ -32,12 +32,22 @@
                 <input type="text" name="phone">
             </div>
             <div class="form-group">
+                <label>ตำแหน่ง</label>
+                <select name="position" class="position-select" onchange="syncDivision(this)">
+                    <option value="">-- เลือกตำแหน่ง --</option>
+                    {% for p in positions %}
+                    <option value="{{ p }}">{{ p }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
                 <label>สายงาน</label>
-                <select name="station">
+                <select name="station" class="division-select">
                     <option value="">-- เลือกสายงาน --</option>
-                    {% for d in ["อำนวยการ","จราจร","สืบสวน","สอบสวน","ปราบปราม"] %}
+                    {% for d in divisions %}
                     <option value="{{ d }}">{{ d }}</option>
                     {% endfor %}
+                    <option value="{{ executive_division }}" class="exec-option">{{ executive_division }}</option>
                 </select>
             </div>
         </div>
@@ -56,6 +66,10 @@
             <button type="button" class="btn btn-secondary" onclick="document.getElementById('generateModal').style.display='flex'">
                 ✨ Generate ข้อมูล
             </button>
+            <form method="POST" action="{{ url_for('clear_officers') }}" style="display:inline;"
+                  onsubmit="return confirm('ต้องการล้างข้อมูลเจ้าหน้าที่ทั้งหมดหรือไม่? เวรที่เกี่ยวข้องจะถูกลบด้วย และไม่สามารถย้อนกลับได้');">
+                <button type="submit" class="btn btn-danger">🗑️ ล้างข้อมูลทั้งหมด</button>
+            </form>
             {% endif %}
             <div class="btn-group" style="border: 1px solid #cbd5e1; border-radius: 8px; overflow: hidden;">
                 <a href="{{ url_for('officers', sort='rank', order='asc') }}"
@@ -81,7 +95,7 @@
         <thead>
             <tr>
                 <th>ID</th><th>ยศ</th><th>ชื่อ-สกุล</th><th>เลขประจำตัว</th>
-                <th>โทรศัพท์</th><th>สายงาน</th><th>จัดการ</th>
+                <th>โทรศัพท์</th><th>ตำแหน่ง</th><th>สายงาน</th><th>จัดการ</th>
             </tr>
         </thead>
         <tbody>
@@ -92,6 +106,7 @@
                 <td>{{ o.full_name }}</td>
                 <td>{{ o.badge_no }}</td>
                 <td>{{ o.phone or "-" }}</td>
+                <td>{{ o.position or "-" }}</td>
                 <td>{{ o.station or "-" }}</td>
                 <td>
                     <div class="inline-form">
@@ -106,7 +121,7 @@
             </tr>
             {# แถวฟอร์มแก้ไข (ซ่อนไว้ก่อน คลิกแก้ไขจึงแสดง) #}
             <tr id="edit-{{ o.id }}" style="display:none; background:#fff8e1;">
-                <td colspan="7">
+                <td colspan="8">
                     <form method="POST" action="{{ url_for('officers_edit', officer_id=o.id) }}">
                         <div class="form-grid">
                             <div class="form-group">
@@ -120,12 +135,21 @@
                             <div class="form-group"><label>ชื่อ-สกุล</label><input type="text" name="full_name" value="{{ o.full_name }}"></div>
                             <div class="form-group"><label>เลขประจำตัว</label><input type="text" name="badge_no" value="{{ o.badge_no }}"></div>
                             <div class="form-group"><label>โทรศัพท์</label><input type="text" name="phone" value="{{ o.phone or '' }}"></div>
+                            <div class="form-group"><label>ตำแหน่ง</label>
+                                <select name="position" class="position-select" onchange="syncDivision(this)">
+                                    <option value="">-- เลือกตำแหน่ง --</option>
+                                    {% for p in positions %}
+                                    <option value="{{ p }}" {{ 'selected' if p == o.position }}>{{ p }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
                             <div class="form-group"><label>สายงาน</label>
-                                <select name="station">
+                                <select name="station" class="division-select">
                                     <option value="">-- เลือกสายงาน --</option>
-                                    {% for d in ["อำนวยการ","จราจร","สืบสวน","สอบสวน","ปราบปราม"] %}
+                                    {% for d in divisions %}
                                     <option value="{{ d }}" {{ 'selected' if d == o.station }}>{{ d }}</option>
                                     {% endfor %}
+                                    <option value="{{ executive_division }}" class="exec-option" {{ 'selected' if o.station == executive_division }}>{{ executive_division }}</option>
                                 </select>
                             </div>
                         </div>
@@ -137,7 +161,7 @@
                 </td>
             </tr>
             {% else %}
-            <tr><td colspan="7" style="text-align:center; color:#95a5a6;">ยังไม่มีข้อมูลเจ้าหน้าที่</td></tr>
+            <tr><td colspan="8" style="text-align:center; color:#95a5a6;">ยังไม่มีข้อมูลเจ้าหน้าที่</td></tr>
             {% endfor %}
         </tbody>
     </table>
@@ -169,10 +193,44 @@
 </div>
 
 <script>
+// รายชื่อตำแหน่งระดับบริหาร (เลือกสายงาน "บริหาร" ได้)
+var EXEC_POSITIONS = {{ executive_positions | tojson }};
+var EXEC_DIVISION = {{ executive_division | tojson }};
+
 // สลับการแสดง/ซ่อนแถวฟอร์มแก้ไข
 function toggleEdit(id) {
     var row = document.getElementById('edit-' + id);
     row.style.display = (row.style.display === 'none') ? 'table-row' : 'none';
 }
+
+// บังคับกฎ: เฉพาะตำแหน่งระดับบริหารจึงเลือกสายงาน "บริหาร" ได้
+function syncDivision(positionSelect) {
+    var group = positionSelect.closest('.form-grid') || positionSelect.closest('form');
+    if (!group) return;
+    var division = group.querySelector('.division-select');
+    if (!division) return;
+    var execOption = division.querySelector('.exec-option');
+    if (!execOption) return;
+
+    var isExec = EXEC_POSITIONS.indexOf(positionSelect.value) !== -1;
+    if (isExec) {
+        execOption.disabled = false;
+        execOption.hidden = false;
+    } else {
+        // ตำแหน่งไม่ถึงระดับบริหาร: ปิดตัวเลือกบริหาร และถ้าเลือกไว้ให้ล้างค่า
+        if (division.value === EXEC_DIVISION) {
+            division.value = "";
+        }
+        execOption.disabled = true;
+        execOption.hidden = true;
+    }
+}
+
+// ตั้งค่าเริ่มต้นให้ทุก dropdown ตำแหน่งเมื่อโหลดหน้า
+document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('.position-select').forEach(function (sel) {
+        syncDivision(sel);
+    });
+});
 </script>
 {% endblock %}

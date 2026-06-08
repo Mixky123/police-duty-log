@@ -23,6 +23,7 @@ from flask import (Flask, render_template, request, redirect,
 from datetime import datetime
 import db
 from pdf_report import create_monthly_report_pdf
+import law_data
 
 app = Flask(__name__)
 # คีย์ลับสำหรับเข้ารหัส session — ใช้ค่าจาก environment ถ้ามี (บนเซิร์ฟเวอร์จริง)
@@ -165,7 +166,10 @@ def officers():
     if order == "desc":
         all_officers.reverse()
 
-    return render_template("officers.html", officers=all_officers, sort_by=sort_by, order=order)
+    return render_template("officers.html", officers=all_officers, sort_by=sort_by, order=order,
+                           positions=law_data.POSITIONS, divisions=law_data.DIVISIONS,
+                           executive_division=law_data.EXECUTIVE_DIVISION,
+                           executive_positions=law_data.EXECUTIVE_POSITIONS)
 
 
 @app.route("/officers/add", methods=["POST"])
@@ -178,6 +182,7 @@ def officers_add():
         request.form.get("badge_no", "").strip(),
         request.form.get("phone", "").strip(),
         request.form.get("station", "").strip(),
+        request.form.get("position", "").strip(),
     )
     flash(msg, "success" if success else "danger")
     return redirect(url_for("officers"))
@@ -194,6 +199,7 @@ def officers_edit(officer_id):
         request.form.get("badge_no", "").strip(),
         request.form.get("phone", "").strip(),
         request.form.get("station", "").strip(),
+        request.form.get("position", "").strip(),
     )
     flash(msg, "success" if success else "danger")
     return redirect(url_for("officers"))
@@ -366,7 +372,8 @@ def incidents():
 
     return render_template("incidents.html",
                            incidents=all_incidents, officers=all_officers,
-                           sort_by=sort_by, order=order)
+                           sort_by=sort_by, order=order,
+                           laws=law_data.LAWS, law_names=law_data.LAW_NAMES)
 
 
 @app.route("/incidents/add", methods=["POST"])
@@ -378,13 +385,18 @@ def incidents_add():
     if not officer_id:
         officer_id = None
 
+    law = request.form.get("law", "").strip()
+    section = request.form.get("section", "").strip()
+
     success, msg = db.add_incident(
         request.form.get("incident_time", "").strip(),
-        request.form.get("category", "").strip(),
+        law,  # category เก็บชื่อ พรบ เพื่อให้แดชบอร์ด/รายงานสรุปได้
         request.form.get("severity", "").strip(),
         request.form.get("location", "").strip(),
         request.form.get("description", "").strip(),
         officer_id,
+        law,
+        section,
     )
     flash(msg, "success" if success else "danger")
     return redirect(url_for("incidents"))
@@ -457,6 +469,28 @@ def generate_incidents():
         flash("กรุณาระบุจำนวนเป็นตัวเลข", "danger")
 
     return redirect(url_for("generate"))
+
+
+# ==========================================================
+#  เส้นทางสำหรับล้างข้อมูล (Clear Data) - Admin เท่านั้น
+# ==========================================================
+
+@app.route("/clear/officers", methods=["POST"])
+@admin_required
+def clear_officers():
+    """ล้างข้อมูลเจ้าหน้าที่ทั้งหมด (Admin เท่านั้น)"""
+    success, msg = db.delete_all_officers()
+    flash(msg, "success" if success else "danger")
+    return redirect(url_for("officers"))
+
+
+@app.route("/clear/incidents", methods=["POST"])
+@admin_required
+def clear_incidents():
+    """ล้างข้อมูลเหตุการณ์ทั้งหมด (Admin เท่านั้น)"""
+    success, msg = db.delete_all_incidents()
+    flash(msg, "success" if success else "danger")
+    return redirect(url_for("incidents"))
 
 
 # ==========================================================

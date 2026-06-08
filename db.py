@@ -148,7 +148,46 @@ def init_database():
 
     conn.commit()
     conn.close()
+    _run_migrations()
     _ensure_default_admin()
+
+
+def _column_exists(cur, table, column):
+    """ตรวจว่าคอลัมน์มีอยู่แล้วหรือยัง (รองรับทั้ง Postgres และ SQLite)"""
+    if USE_POSTGRES:
+        cur.execute(
+            "SELECT 1 FROM information_schema.columns WHERE table_name = %s AND column_name = %s;",
+            (table, column),
+        )
+        return cur.fetchone() is not None
+    else:
+        cur.execute(f"PRAGMA table_info({table});")
+        return any(row[1] == column for row in cur.fetchall())
+
+
+def _run_migrations():
+    """เพิ่มคอลัมน์ใหม่ให้ตารางเดิมที่สร้างไว้ก่อนหน้า (idempotent)
+
+    จำเป็นเพราะใช้ CREATE TABLE IF NOT EXISTS ทำให้ตารางเก่าบน Render
+    ไม่ได้คอลัมน์ใหม่อัตโนมัติ จึงต้อง ALTER TABLE เติมเอง
+    """
+    migrations = [
+        ("officers", "position", "TEXT"),
+        ("incidents", "law", "TEXT"),
+        ("incidents", "section", "TEXT"),
+    ]
+    conn = get_connection()
+    cur = conn.cursor()
+    try:
+        for table, column, coltype in migrations:
+            if not _column_exists(cur, table, column):
+                cur.execute(f"ALTER TABLE {table} ADD COLUMN {column} {coltype};")
+        conn.commit()
+    except Exception as e:
+        # ไม่ให้ migration ที่ล้มเหลวทำแอปล่ม แต่พิมพ์ไว้ให้เห็นใน log
+        print("Migration warning:", e)
+    finally:
+        conn.close()
 
 
 def _ensure_default_admin():
@@ -295,7 +334,7 @@ def delete_user(user_id):
 #  ส่วนที่ 2 : จัดการข้อมูลเจ้าหน้าที่ (Officers CRUD)
 # ==========================================================
 
-def add_officer(rank, full_name, badge_no, phone, station):
+def add_officer(rank, full_name, badge_no, phone, station, position=""):
     """เพิ่มข้อมูลเจ้าหน้าที่ใหม่ คืน (สำเร็จ, ข้อความ)"""
     if not rank or not full_name or not badge_no:
         return False, "กรุณากรอก ยศ ชื่อ-สกุล และเลขประจำตัวให้ครบ"
@@ -303,9 +342,9 @@ def add_officer(rank, full_name, badge_no, phone, station):
         conn = get_connection()
         cur = conn.cursor()
         cur.execute(
-            f"""INSERT INTO officers (rank, full_name, badge_no, phone, station, created_at)
-                VALUES ({PH}, {PH}, {PH}, {PH}, {PH}, {PH});""",
-            (rank, full_name, badge_no, phone, station, now_str()),
+            f"""INSERT INTO officers (rank, full_name, badge_no, phone, station, position, created_at)
+                VALUES ({PH}, {PH}, {PH}, {PH}, {PH}, {PH}, {PH});""",
+            (rank, full_name, badge_no, phone, station, position, now_str()),
         )
         conn.commit()
         conn.close()
@@ -336,16 +375,16 @@ def get_officer(officer_id):
     return row
 
 
-def update_officer(officer_id, rank, full_name, badge_no, phone, station):
+def update_officer(officer_id, rank, full_name, badge_no, phone, station, position=""):
     """แก้ไขข้อมูลเจ้าหน้าที่ตาม id"""
     try:
         conn = get_connection()
         cur = conn.cursor()
         cur.execute(
             f"""UPDATE officers
-                SET rank = {PH}, full_name = {PH}, badge_no = {PH}, phone = {PH}, station = {PH}
+                SET rank = {PH}, full_name = {PH}, badge_no = {PH}, phone = {PH}, station = {PH}, position = {PH}
                 WHERE id = {PH};""",
-            (rank, full_name, badge_no, phone, station, officer_id),
+            (rank, full_name, badge_no, phone, station, position, officer_id),
         )
         conn.commit()
         conn.close()
@@ -438,18 +477,22 @@ def delete_duty(duty_id):
 #  ส่วนที่ 4 : บันทึกเหตุประจำวัน (Incidents CRUD)
 # ==========================================================
 
-def add_incident(incident_time, category, severity, location, description, officer_id):
-    """เพิ่มบันทึกเหตุการณ์ใหม่ (officer_id อาจเป็น None ได้)"""
+def add_incident(incident_time, category, severity, location, description, officer_id, law="", section=""):
+    """เพิ่มบันทึกเหตุการณ์ใหม่ (officer_id อาจเป็น None ได้)
+
+    category เก็บชื่อ พรบ (เพื่อความเข้ากันได้กับโค้ดเดิม/แดชบอร์ด)
+    law เก็บชื่อ พรบ และ section เก็บมาตรา
+    """
     if not incident_time or not category or not location or not description:
-        return False, "กรุณากรอก เวลา ประเภท สถานที่ และรายละเอียดให้ครบ"
+        return False, "กรุณากรอก เวลา พรบ สถานที่ และรายละเอียดให้ครบ"
     try:
         conn = get_connection()
         cur = conn.cursor()
         cur.execute(
             f"""INSERT INTO incidents
-                (incident_time, category, severity, location, description, officer_id, status, created_at)
-                VALUES ({PH}, {PH}, {PH}, {PH}, {PH}, {PH}, 'open', {PH});""",
-            (incident_time, category, severity, location, description, officer_id, now_str()),
+                (incident_time, category, severity, location, description, officer_id, law, section, status, created_at)
+                VALUES ({PH}, {PH}, {PH}, {PH}, {PH}, {PH}, {PH}, {PH}, 'open', {PH});""",
+            (incident_time, category, severity, location, description, officer_id, law, section, now_str()),
         )
         conn.commit()
         conn.close()
@@ -464,7 +507,7 @@ def get_all_incidents():
     cur = _dict_cursor(conn)
     cur.execute("""
         SELECT i.id, i.incident_time, i.category, i.severity, i.location,
-               i.description, i.status, o.rank, o.full_name AS officer_name
+               i.description, i.status, i.law, i.section, o.rank, o.full_name AS officer_name
         FROM incidents i
         LEFT JOIN officers o ON i.officer_id = o.id
         ORDER BY i.incident_time DESC;
@@ -496,6 +539,35 @@ def delete_incident(incident_id):
         conn.commit()
         conn.close()
         return True, "ลบบันทึกเหตุการณ์สำเร็จ"
+    except Exception as e:
+        return False, "เกิดข้อผิดพลาด: " + str(e)
+
+
+def delete_all_incidents():
+    """ลบบันทึกเหตุการณ์ทั้งหมด คืน (สำเร็จ, ข้อความ)"""
+    try:
+        conn = get_connection()
+        cur = conn.cursor()
+        cur.execute("DELETE FROM incidents;")
+        conn.commit()
+        conn.close()
+        return True, "ล้างข้อมูลเหตุการณ์ทั้งหมดแล้ว"
+    except Exception as e:
+        return False, "เกิดข้อผิดพลาด: " + str(e)
+
+
+def delete_all_officers():
+    """ลบข้อมูลเจ้าหน้าที่ทั้งหมด (รวมเวรและการอ้างอิงในเหตุการณ์) คืน (สำเร็จ, ข้อความ)"""
+    try:
+        conn = get_connection()
+        cur = conn.cursor()
+        # ลบเวรก่อน (FK) แล้วเคลียร์ officer_id ในเหตุการณ์ จากนั้นลบเจ้าหน้าที่
+        cur.execute("DELETE FROM duties;")
+        cur.execute("UPDATE incidents SET officer_id = NULL;")
+        cur.execute("DELETE FROM officers;")
+        conn.commit()
+        conn.close()
+        return True, "ล้างข้อมูลเจ้าหน้าที่ทั้งหมดแล้ว"
     except Exception as e:
         return False, "เกิดข้อผิดพลาด: " + str(e)
 
@@ -551,13 +623,13 @@ def get_dashboard_stats():
 def generate_officers(count=10):
     """สร้างเจ้าหน้าที่สุ่มจำนวน count คน"""
     import random
+    from law_data import POSITIONS, DIVISIONS, EXECUTIVE_DIVISION, can_be_executive
     ranks = ["พ.ต.อ.", "พ.ต.ท.", "พ.ต.ต.", "ร.ต.อ.", "ร.ต.ท.", "ร.ต.ต.",
              "ด.ต.", "ส.ต.อ.", "ส.ต.ท.", "ส.ต.ต."]
     first_names = ["สมชาย", "วิชัย", "ประสงค์", "อนุชา", "ธนากร", "ณัฐพล",
                    "สมศักดิ์", "วีระ", "ชัยวัฒน์", "พิชัย", "เกรียงไกร", "สุรชัย"]
     last_names = ["ใจเด็ด", "รักษาชาติ", "มั่นคง", "กล้าหาญ", "สุจริต", "อดทน",
                   "ซื่อตรง", "ยุติธรรม", "เข้มแข็ง", "รักษาดี", "ปกป้อง", "ดีงาม"]
-    stations = ["อำนวยการ", "จราจร", "สืบสวน", "สอบสวน", "ปราบปราม"]
 
     generated = 0
     for i in range(count):
@@ -566,9 +638,14 @@ def generate_officers(count=10):
         lname = random.choice(last_names)
         badge = f"P{random.randint(2000, 9999)}"
         phone = f"08{random.randint(0,9)}-{random.randint(100,999)}-{random.randint(1000,9999)}"
-        station = random.choice(stations)
+        position = random.choice(POSITIONS)
+        # ระดับบริหารจึงจะมีโอกาสอยู่สายงานบริหาร
+        if can_be_executive(position):
+            station = random.choice(DIVISIONS + [EXECUTIVE_DIVISION])
+        else:
+            station = random.choice(DIVISIONS)
 
-        success, msg = add_officer(rank, f"{fname} {lname}", badge, phone, station)
+        success, msg = add_officer(rank, f"{fname} {lname}", badge, phone, station, position)
         if success:
             generated += 1
 
@@ -579,12 +656,14 @@ def generate_incidents(count=20):
     """สร้างเหตุการณ์สุ่มจำนวน count รายการ"""
     import random
     from datetime import datetime, timedelta
+    from law_data import LAWS, LAW_NAMES
 
-    categories = ["อุบัติเหตุจราจร", "ลักทรัพย์", "ทะเลาะวิวาท", "ยาเสพติด",
-                  "เหตุทั่วไป", "ทำร้ายร่างกาย", "รถหาย", "วิ่งราว"]
     severities = ["ต่ำ", "ปานกลาง", "สูง", "วิกฤต"]
     locations = ["สี่แยกกลางเมือง", "ตลาดนัด", "ห้างสรรพสินค้า", "สวนสาธารณะ",
                  "ถนนหน้าตลาด", "ลานจอดรถห้าง", "ย่านที่พักอาศัย", "ริมถนนใหญ่"]
+
+    # เลือกเฉพาะ พรบ ที่มีรายการมาตรา (ตัด "อื่น ๆ" ที่ว่างออก)
+    laws_with_sections = [name for name in LAW_NAMES if LAWS.get(name)]
 
     # ดึงรายชื่อเจ้าหน้าที่มาสุ่ม
     officers = get_all_officers()
@@ -600,13 +679,15 @@ def generate_incidents(count=20):
         incident_time = datetime.now() - timedelta(days=days_ago, hours=hours, minutes=minutes)
         time_str = incident_time.strftime("%Y-%m-%d %H:%M")
 
-        category = random.choice(categories)
+        law = random.choice(laws_with_sections)
+        section = random.choice(LAWS[law])
         severity = random.choice(severities)
         location = random.choice(locations)
-        description = f"เหตุการณ์ {category} เกิดขึ้นที่ {location}"
+        description = f"ความผิดตาม {law} {section} เกิดขึ้นที่ {location}"
         officer_id = random.choice(officers)["id"]
 
-        success, msg = add_incident(time_str, category, severity, location, description, officer_id)
+        # category เก็บชื่อ พรบ เพื่อให้แดชบอร์ด/รายงานสรุปได้
+        success, msg = add_incident(time_str, law, severity, location, description, officer_id, law, section)
         if success:
             generated += 1
 
