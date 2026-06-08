@@ -20,21 +20,17 @@
             <form method="POST" action="{{ url_for('login') }}">
                 <div class="form-group">
                     <label for="username">ชื่อผู้ใช้ (Username)</label>
-                    <input type="text" id="username" name="username" value="admin" required autofocus>
+                    <input type="text" id="username" name="username" placeholder="กรอกชื่อผู้ใช้" required autofocus>
                 </div>
                 <div class="form-group">
                     <label for="password">รหัสผ่าน (Password)</label>
-                    <input type="password" id="password" name="password" value="admin123" required>
+                    <input type="password" id="password" name="password" placeholder="กรอกรหัสผ่าน" required>
                 </div>
                 <button type="submit" class="btn btn-primary">เข้าสู่ระบบ</button>
             </form>
 
             <div class="auth-footer">
                 ยังไม่มีบัญชี? <a href="{{ url_for('register') }}">สมัครบัญชีผู้ใช้ใหม่</a>
-            </div>
-            <div class="hint-box">
-                บัญชีเริ่มต้นสำหรับทดสอบ<br>
-                Username: <b>admin</b> &nbsp; Password: <b>admin123</b>
             </div>
         </div>
     </div>
