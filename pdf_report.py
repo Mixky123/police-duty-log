@@ -16,32 +16,42 @@ import io
 import os
 
 
-# ลงทะเบียนฟอนต์ไทย (ใช้ฟอนต์ที่มีใน Windows)
+# ลงทะเบียนฟอนต์ไทย (ฝังไว้ในโปรเจกต์ ทำงานได้ทั้งบน Windows และ Render/Linux)
 def register_thai_font():
-    """ลงทะเบียนฟอนต์ไทยจากระบบ Windows"""
+    """
+    ลงทะเบียนฟอนต์ไทย Sarabun ที่ฝังมากับโปรเจกต์
+    คืนค่า (regular_font_name, bold_font_name)
+    """
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    fonts_dir = os.path.join(base_dir, "static", "fonts")
+
+    regular_path = os.path.join(fonts_dir, "Sarabun-Regular.ttf")
+    bold_path = os.path.join(fonts_dir, "Sarabun-Bold.ttf")
+
+    regular_name = "Helvetica"
+    bold_name = "Helvetica-Bold"
+
     try:
-        # ลองใช้ Tahoma ก่อน (มีใน Windows ทุก version และรองรับไทย)
-        font_path = "C:/Windows/Fonts/tahoma.ttf"
-        if os.path.exists(font_path):
-            pdfmetrics.registerFont(TTFont('THFont', font_path))
-            return 'THFont'
+        if os.path.exists(regular_path):
+            pdfmetrics.registerFont(TTFont("THFont", regular_path))
+            regular_name = "THFont"
+        if os.path.exists(bold_path):
+            pdfmetrics.registerFont(TTFont("THFont-Bold", bold_path))
+            bold_name = "THFont-Bold"
+        else:
+            # ถ้าไม่มีไฟล์ตัวหนา ใช้ตัวปกติแทน
+            bold_name = regular_name
 
-        # ใช้ Sarabun หรือ THSarabunNew ถ้ามีใน Windows
-        font_path = "C:/Windows/Fonts/THSarabunNew.ttf"
-        if os.path.exists(font_path):
-            pdfmetrics.registerFont(TTFont('THFont', font_path))
-            return 'THFont'
+        # ผูกตัวปกติ/ตัวหนาเข้าด้วยกัน เผื่อ reportlab เรียกใช้ <b>
+        if regular_name == "THFont":
+            pdfmetrics.registerFontFamily(
+                "THFont", normal="THFont", bold=bold_name,
+                italic="THFont", boldItalic=bold_name,
+            )
+    except Exception:
+        return ("Helvetica", "Helvetica-Bold")
 
-        # ถ้าไม่เจอ ใช้ Angsana
-        font_path = "C:/Windows/Fonts/angsa.ttf"
-        if os.path.exists(font_path):
-            pdfmetrics.registerFont(TTFont('THFont', font_path))
-            return 'THFont'
-
-        # ถ้าไม่เจอเลย ใช้ Helvetica (ไม่รองรับไทย แต่ไม่ error)
-        return 'Helvetica'
-    except:
-        return 'Helvetica'
+    return (regular_name, bold_name)
 
 
 def create_monthly_report_pdf(incidents, year, month, output_path=None):
@@ -57,8 +67,8 @@ def create_monthly_report_pdf(incidents, year, month, output_path=None):
     Returns:
         BytesIO object หรือ None (ถ้าระบุ output_path)
     """
-    # ลงทะเบียนฟอนต์ไทย
-    thai_font = register_thai_font()
+    # ลงทะเบียนฟอนต์ไทย (ตัวปกติ + ตัวหนา)
+    thai_font, thai_font_bold = register_thai_font()
 
     # สร้าง buffer สำหรับ PDF
     if output_path:
@@ -78,7 +88,7 @@ def create_monthly_report_pdf(incidents, year, month, output_path=None):
     title_style = ParagraphStyle(
         'CustomTitle',
         parent=styles['Heading1'],
-        fontName=thai_font,
+        fontName=thai_font_bold,
         fontSize=18,
         textColor=colors.HexColor('#1e3a8a'),
         alignment=TA_CENTER,
@@ -89,7 +99,7 @@ def create_monthly_report_pdf(incidents, year, month, output_path=None):
     heading_style = ParagraphStyle(
         'CustomHeading',
         parent=styles['Heading2'],
-        fontName=thai_font,
+        fontName=thai_font_bold,
         fontSize=14,
         textColor=colors.HexColor('#1e40af'),
         spaceAfter=8,
@@ -177,7 +187,7 @@ def create_monthly_report_pdf(incidents, year, month, output_path=None):
         ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
         ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
         ('ALIGN', (1, 0), (1, -1), 'CENTER'),
-        ('FONTNAME', (0, 0), (-1, 0), thai_font),
+        ('FONTNAME', (0, 0), (-1, 0), thai_font_bold),
         ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
         ('TOPPADDING', (0, 0), (-1, 0), 8),
         ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
@@ -219,7 +229,7 @@ def create_monthly_report_pdf(incidents, year, month, output_path=None):
             ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
             ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
             ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-            ('FONTNAME', (0, 0), (-1, 0), thai_font),
+            ('FONTNAME', (0, 0), (-1, 0), thai_font_bold),
             ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
             ('TOPPADDING', (0, 0), (-1, -1), 6),
             ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
