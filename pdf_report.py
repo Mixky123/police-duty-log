@@ -130,17 +130,12 @@ def create_monthly_report_pdf(incidents, year, month, output_path=None):
 
     total_incidents = len(incidents)
     by_category = {}
-    by_severity = {}
     by_status = {}
 
     for inc in incidents:
         # นับตามประเภท
         cat = inc.get('category', 'ไม่ระบุ')
         by_category[cat] = by_category.get(cat, 0) + 1
-
-        # นับตามความรุนแรง
-        sev = inc.get('severity', 'ไม่ระบุ')
-        by_severity[sev] = by_severity.get(sev, 0) + 1
 
         # นับตามสถานะ
         status = inc.get('status', 'ไม่ระบุ')
@@ -156,14 +151,6 @@ def create_monthly_report_pdf(incidents, year, month, output_path=None):
 
     for cat, count in sorted(by_category.items(), key=lambda x: x[1], reverse=True):
         summary_data.append([f'  {cat}', str(count)])
-
-    summary_data.append(['', ''])
-    summary_data.append(['แยกตามความรุนแรง:', ''])
-
-    severity_order = ['วิกฤต', 'สูง', 'ปานกลาง', 'ต่ำ']
-    for sev in severity_order:
-        if sev in by_severity:
-            summary_data.append([f'  {sev}', str(by_severity[sev])])
 
     summary_data.append(['', ''])
     summary_data.append(['แยกตามสถานะ:', ''])
@@ -202,13 +189,12 @@ def create_monthly_report_pdf(incidents, year, month, output_path=None):
         elements.append(Spacer(1, 0.3*cm))
 
         # ตารางรายละเอียด
-        detail_data = [['วันที่-เวลา', 'พรบ', 'มาตรา', 'ความรุนแรง', 'สถานที่', 'เจ้าหน้าที่']]
+        detail_data = [['วันที่-เวลา', 'พรบ', 'มาตรา', 'สถานที่', 'เจ้าหน้าที่']]
 
         for inc in incidents:
             time_str = inc.get('incident_time', '')[:16]  # YYYY-MM-DD HH:MM
             law = inc.get('law') or inc.get('category', '')
             section = inc.get('section', '') or '-'
-            severity = inc.get('severity', '')
             location = inc.get('location', '')
             officer = inc.get('officer_name', '')
             if inc.get('rank'):
@@ -216,14 +202,13 @@ def create_monthly_report_pdf(incidents, year, month, output_path=None):
 
             detail_data.append([
                 time_str,
-                law[:18] + '...' if len(law) > 18 else law,
-                section[:18] + '...' if len(section) > 18 else section,
-                severity,
-                location[:16] + '...' if len(location) > 16 else location,
-                officer[:14] + '...' if len(officer) > 14 else officer
+                law[:20] + '...' if len(law) > 20 else law,
+                section[:22] + '...' if len(section) > 22 else section,
+                location[:18] + '...' if len(location) > 18 else location,
+                officer[:16] + '...' if len(officer) > 16 else officer
             ])
 
-        detail_table = Table(detail_data, colWidths=[2.6*cm, 3.2*cm, 3.2*cm, 1.8*cm, 2.9*cm, 3.3*cm])
+        detail_table = Table(detail_data, colWidths=[2.8*cm, 3.6*cm, 3.8*cm, 3.2*cm, 3.6*cm])
         detail_table.setStyle(TableStyle([
             ('FONTNAME', (0, 0), (-1, -1), thai_font),
             ('FONTSIZE', (0, 0), (-1, -1), 9),
@@ -277,7 +262,6 @@ def test_pdf_generation():
             'category': 'ประมวลกฎหมายอาญา',
             'law': 'ประมวลกฎหมายอาญา',
             'section': 'มาตรา 334 (ลักทรัพย์)',
-            'severity': 'ปานกลาง',
             'location': 'สี่แยกกลางเมือง',
             'status': 'resolved',
             'officer_name': 'สมชาย ใจดี',
@@ -288,7 +272,6 @@ def test_pdf_generation():
             'category': 'พ.ร.บ.ยาเสพติดให้โทษ',
             'law': 'พ.ร.บ.ยาเสพติดให้โทษ',
             'section': 'มาตรา 66 (จำหน่าย/ครอบครองเพื่อจำหน่าย)',
-            'severity': 'สูง',
             'location': 'ห้างสรรพสินค้า',
             'status': 'investigating',
             'officer_name': 'วิชัย กล้าหาญ',

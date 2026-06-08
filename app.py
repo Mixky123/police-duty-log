@@ -345,7 +345,7 @@ def duties_delete(duty_id):
 @login_required
 def incidents():
     """แสดงบันทึกเหตุการณ์ทั้งหมด พร้อมรายชื่อเจ้าหน้าที่สำหรับฟอร์ม และการเรียงลำดับ"""
-    sort_by = request.args.get("sort", "incident_time")  # เรียงตาม: incident_time, category, severity, status
+    sort_by = request.args.get("sort", "incident_time")  # เรียงตาม: incident_time, category, status
     order = request.args.get("order", "desc")  # asc หรือ desc
 
     all_incidents = db.get_all_incidents()
@@ -356,9 +356,6 @@ def incidents():
         all_incidents.sort(key=lambda x: x['incident_time'] or "")
     elif sort_by == "category":
         all_incidents.sort(key=lambda x: x['category'] or "")
-    elif sort_by == "severity":
-        severity_order = ["วิกฤต", "สูง", "ปานกลาง", "ต่ำ"]
-        all_incidents.sort(key=lambda x: severity_order.index(x['severity']) if x['severity'] in severity_order else 999)
     elif sort_by == "status":
         status_order = ["pending", "investigating", "resolved", "closed"]
         all_incidents.sort(key=lambda x: status_order.index(x['status']) if x['status'] in status_order else 999)
@@ -391,7 +388,7 @@ def incidents_add():
     success, msg = db.add_incident(
         request.form.get("incident_time", "").strip(),
         law,  # category เก็บชื่อ พรบ เพื่อให้แดชบอร์ด/รายงานสรุปได้
-        request.form.get("severity", "").strip(),
+        "",   # severity ถูกยกเลิกแล้ว (เก็บคอลัมน์ไว้เป็นค่าว่าง)
         request.form.get("location", "").strip(),
         request.form.get("description", "").strip(),
         officer_id,

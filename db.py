@@ -477,7 +477,7 @@ def delete_duty(duty_id):
 #  ส่วนที่ 4 : บันทึกเหตุประจำวัน (Incidents CRUD)
 # ==========================================================
 
-def add_incident(incident_time, category, severity, location, description, officer_id, law="", section=""):
+def add_incident(incident_time, category, severity="", location="", description="", officer_id=None, law="", section=""):
     """เพิ่มบันทึกเหตุการณ์ใหม่ (officer_id อาจเป็น None ได้)
 
     category เก็บชื่อ พรบ (เพื่อความเข้ากันได้กับโค้ดเดิม/แดชบอร์ด)
@@ -605,12 +605,9 @@ def get_dashboard_stats():
         by_category[row[0]] = row[1]
     stats["by_category"] = by_category
 
-    # สรุปจำนวนเหตุการณ์แยกตามระดับความรุนแรง
-    cur.execute("SELECT severity, COUNT(*) FROM incidents GROUP BY severity;")
-    by_severity = {}
-    for row in cur.fetchall():
-        by_severity[row[0]] = row[1]
-    stats["by_severity"] = by_severity
+    # หมายเหตุ: ยกเลิกการสรุปตามระดับความรุนแรงแล้ว
+    # คงคีย์ว่างไว้เผื่อเทมเพลตเก่าอ้างถึง (กันพัง)
+    stats["by_severity"] = {}
 
     conn.close()
     return stats
@@ -658,7 +655,6 @@ def generate_incidents(count=20):
     from datetime import datetime, timedelta
     from law_data import LAWS, LAW_NAMES
 
-    severities = ["ต่ำ", "ปานกลาง", "สูง", "วิกฤต"]
     locations = ["สี่แยกกลางเมือง", "ตลาดนัด", "ห้างสรรพสินค้า", "สวนสาธารณะ",
                  "ถนนหน้าตลาด", "ลานจอดรถห้าง", "ย่านที่พักอาศัย", "ริมถนนใหญ่"]
 
@@ -681,13 +677,12 @@ def generate_incidents(count=20):
 
         law = random.choice(laws_with_sections)
         section = random.choice(LAWS[law])
-        severity = random.choice(severities)
         location = random.choice(locations)
         description = f"ความผิดตาม {law} {section} เกิดขึ้นที่ {location}"
         officer_id = random.choice(officers)["id"]
 
-        # category เก็บชื่อ พรบ เพื่อให้แดชบอร์ด/รายงานสรุปได้
-        success, msg = add_incident(time_str, law, severity, location, description, officer_id, law, section)
+        # category เก็บชื่อ พรบ เพื่อให้แดชบอร์ด/รายงานสรุปได้ (severity เป็นค่าว่าง)
+        success, msg = add_incident(time_str, law, "", location, description, officer_id, law, section)
         if success:
             generated += 1
 

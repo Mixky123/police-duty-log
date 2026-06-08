@@ -45,20 +45,4 @@
     {% endif %}
 </div>
 
-{# สรุปตามระดับความรุนแรง #}
-<div class="card">
-    <h2>สถิติเหตุการณ์แยกตามระดับความรุนแรง</h2>
-    {% if stats.by_severity %}
-        <div style="display:flex; gap:12px; flex-wrap:wrap;">
-        {% for severity, count in stats.by_severity.items() %}
-            <div style="background:#f7f9fc; border-radius:8px; padding:14px 20px; min-width:120px; text-align:center;">
-                <div style="font-size:26px; font-weight:700; color:var(--primary);">{{ count }}</div>
-                <div style="font-size:14px; color:var(--muted);">{{ severity }}</div>
-            </div>
-        {% endfor %}
-        </div>
-    {% else %}
-        <p style="color:#95a5a6;">ยังไม่มีข้อมูล</p>
-    {% endif %}
-</div>
 {% endblock %}

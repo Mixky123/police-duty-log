@@ -77,8 +77,7 @@
                     <h4 style="color: #1e40af; margin: 0 0 0.5rem 0;">📋 รายงานจะประกอบด้วย:</h4>
                     <ul style="margin: 0; padding-left: 1.5rem; color: #1e3a8a; line-height: 1.8;">
                         <li>สรุปภาพรวมเหตุการณ์ทั้งเดือน</li>
-                        <li>สถิติแยกตามประเภทเหตุการณ์</li>
-                        <li>สถิติแยกตามความรุนแรง</li>
+                        <li>สถิติแยกตาม พรบ</li>
                         <li>สถิติแยกตามสถานะการดำเนินการ</li>
                         <li>ตารางรายละเอียดเหตุการณ์ทั้งหมด</li>
                     </ul>
@@ -134,9 +133,9 @@
                 </div>
                 <div style="padding: 1rem; background: #fee2e2; border-radius: 8px;">
                     <div style="font-size: 2rem; font-weight: bold; color: #dc2626;">
-                        {{ stats.by_severity.get('สูง', 0) + stats.by_severity.get('วิกฤต', 0) }}
+                        {{ stats.total_incidents }}
                     </div>
-                    <div style="color: #64748b; margin-top: 0.5rem;">ความรุนแรงสูง</div>
+                    <div style="color: #64748b; margin-top: 0.5rem;">เหตุการณ์ทั้งหมด</div>
                 </div>
                 <div style="padding: 1rem; background: #dcfce7; border-radius: 8px;">
                     <div style="font-size: 2rem; font-weight: bold; color: #16a34a;">
