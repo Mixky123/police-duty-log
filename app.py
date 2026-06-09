@@ -83,13 +83,14 @@ def login():
 
         user = db.verify_login(username, password)
         if user is None:
+            db.add_login_log(username, "login_fail", False, request.remote_addr)
             flash("ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง", "danger")
             return redirect(url_for("login"))
 
-        # เก็บข้อมูลผู้ใช้ไว้ใน session
         session["user_id"] = user["id"]
         session["username"] = user["username"]
         session["role"] = user["role"]
+        db.add_login_log(username, "login", True, request.remote_addr)
         flash("เข้าสู่ระบบสำเร็จ ยินดีต้อนรับ " + user["username"], "success")
         return redirect(url_for("dashboard"))
 
@@ -120,6 +121,9 @@ def register():
 @app.route("/logout")
 def logout():
     """ออกจากระบบ ล้าง session"""
+    username = session.get("username", "")
+    if username:
+        db.add_login_log(username, "logout", True, request.remote_addr)
     session.clear()
     flash("ออกจากระบบเรียบร้อยแล้ว", "success")
     return redirect(url_for("login"))
@@ -217,6 +221,14 @@ def officers_delete(officer_id):
 # ==========================================================
 #  เส้นทางจัดการผู้ใช้ (Users) - Admin เท่านั้น
 # ==========================================================
+
+@app.route("/login-logs")
+@admin_required
+def login_logs():
+    """หน้าดูประวัติการเข้าสู่ระบบ (Admin เท่านั้น)"""
+    logs = db.get_login_logs(300)
+    return render_template("login_logs.html", logs=logs)
+
 
 @app.route("/users")
 @admin_required

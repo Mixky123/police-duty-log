@@ -146,6 +146,17 @@ def init_database():
         );
     """)
 
+    cur.execute(f"""
+        CREATE TABLE IF NOT EXISTS login_logs (
+            id         {pk},
+            username   TEXT NOT NULL,
+            action     TEXT NOT NULL,
+            success    INTEGER NOT NULL DEFAULT 1,
+            ip_address TEXT,
+            created_at TEXT NOT NULL
+        );
+    """)
+
     conn.commit()
     conn.close()
     _run_migrations()
@@ -328,6 +339,32 @@ def delete_user(user_id):
         if "unique" in str(e).lower() or "duplicate" in str(e).lower():
             return False, "ชื่อผู้ใช้นี้มีอยู่แล้วในระบบ"
         return False, "เกิดข้อผิดพลาด: " + str(e)
+
+
+def add_login_log(username, action, success, ip_address=""):
+    """บันทึก login/logout log (ล้มเหลวไม่ crash แอป)"""
+    try:
+        conn = get_connection()
+        cur = conn.cursor()
+        cur.execute(
+            f"INSERT INTO login_logs (username, action, success, ip_address, created_at) "
+            f"VALUES ({PH},{PH},{PH},{PH},{PH});",
+            (username, action, 1 if success else 0, ip_address or "", now_str()),
+        )
+        conn.commit()
+        conn.close()
+    except Exception:
+        pass
+
+
+def get_login_logs(limit=200):
+    """ดึง login logs ล่าสุด limit รายการ"""
+    conn = get_connection()
+    cur = _dict_cursor(conn)
+    cur.execute(f"SELECT * FROM login_logs ORDER BY id DESC LIMIT {PH};", (limit,))
+    rows = [_row_to_dict(r) for r in cur.fetchall()]
+    conn.close()
+    return rows
 
 
 # ==========================================================

@@ -22,6 +22,7 @@
             <a href="{{ url_for('reports') }}" class="{{ 'active' if active=='reports' }}">รายงาน</a>
             {% if session.get('role') == 'admin' %}
             <a href="{{ url_for('users') }}" class="{{ 'active' if active=='users' }}">👥 ผู้ใช้</a>
+            <a href="{{ url_for('login_logs') }}" class="{{ 'active' if active=='login_logs' }}">📋 ล็อก</a>
             {% endif %}
             <span class="user-box">👤 {{ session.get('username') }}
                 {% if session.get('role') == 'admin' %}<span style="color: #d4af37;">(Admin)</span>{% endif %}

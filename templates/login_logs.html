@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}ประวัติการเข้าสู่ระบบ{% endblock %}
+
+{% block content %}
+<div class="page-title">ประวัติการเข้าสู่ระบบ</div>
+<div class="page-subtitle">บันทึก login/logout และความพยายามเข้าสู่ระบบที่ล้มเหลว (300 รายการล่าสุด)</div>
+
+<div class="card">
+    <div class="table-wrap">
+    <table>
+        <thead>
+            <tr>
+                <th>เวลา</th>
+                <th>ชื่อผู้ใช้</th>
+                <th>การกระทำ</th>
+                <th>ผล</th>
+                <th>IP Address</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for log in logs %}
+            <tr>
+                <td>{{ log.created_at }}</td>
+                <td>{{ log.username }}</td>
+                <td>
+                    {% if log.action == 'login' %}🔑 เข้าสู่ระบบ
+                    {% elif log.action == 'logout' %}🚪 ออกจากระบบ
+                    {% else %}⚠️ รหัสผ่านผิด
+                    {% endif %}
+                </td>
+                <td>
+                    {% if log.success %}
+                        <span style="color:#16a34a; font-weight:600;">✓ สำเร็จ</span>
+                    {% else %}
+                        <span style="color:#dc2626; font-weight:600;">✗ ล้มเหลว</span>
+                    {% endif %}
+                </td>
+                <td>{{ log.ip_address or "-" }}</td>
+            </tr>
+            {% else %}
+            <tr><td colspan="5" style="text-align:center; color:#95a5a6;">ยังไม่มีประวัติการเข้าสู่ระบบ</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
+</div>
+{% endblock %}
