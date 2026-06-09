@@ -18,10 +18,28 @@ app.py
 
 import os
 import functools
+import urllib.request
+import json
 from flask import (Flask, render_template, request, redirect,
                    url_for, session, flash, send_file)
 from datetime import datetime
 import db
+
+
+def get_ip_location(ip):
+    """ดึง country/city จาก IP ผ่าน ip-api.com (ฟรี, ไม่ต้อง key)"""
+    if not ip or ip in ("127.0.0.1", "::1"):
+        return "Local"
+    try:
+        with urllib.request.urlopen(
+            f"http://ip-api.com/json/{ip}?fields=country,city,status", timeout=2
+        ) as r:
+            data = json.loads(r.read())
+        if data.get("status") == "success":
+            return f"{data.get('city','')}, {data.get('country','')}"
+    except Exception:
+        pass
+    return ""
 from pdf_report import create_monthly_report_pdf
 import law_data
 
@@ -83,14 +101,16 @@ def login():
 
         user = db.verify_login(username, password)
         if user is None:
-            db.add_login_log(username, "login_fail", False, request.remote_addr)
+            db.add_login_log(username, "login_fail", False, request.remote_addr,
+                             get_ip_location(request.remote_addr))
             flash("ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง", "danger")
             return redirect(url_for("login"))
 
         session["user_id"] = user["id"]
         session["username"] = user["username"]
         session["role"] = user["role"]
-        db.add_login_log(username, "login", True, request.remote_addr)
+        db.add_login_log(username, "login", True, request.remote_addr,
+                         get_ip_location(request.remote_addr))
         flash("เข้าสู่ระบบสำเร็จ ยินดีต้อนรับ " + user["username"], "success")
         return redirect(url_for("dashboard"))
 
@@ -123,7 +143,8 @@ def logout():
     """ออกจากระบบ ล้าง session"""
     username = session.get("username", "")
     if username:
-        db.add_login_log(username, "logout", True, request.remote_addr)
+        db.add_login_log(username, "logout", True, request.remote_addr,
+                         get_ip_location(request.remote_addr))
     session.clear()
     flash("ออกจากระบบเรียบร้อยแล้ว", "success")
     return redirect(url_for("login"))

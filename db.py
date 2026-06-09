@@ -186,6 +186,7 @@ def _run_migrations():
         ("officers", "position", "TEXT"),
         ("incidents", "law", "TEXT"),
         ("incidents", "section", "TEXT"),
+        ("login_logs", "location", "TEXT"),
     ]
     conn = get_connection()
     cur = conn.cursor()
@@ -341,15 +342,15 @@ def delete_user(user_id):
         return False, "เกิดข้อผิดพลาด: " + str(e)
 
 
-def add_login_log(username, action, success, ip_address=""):
+def add_login_log(username, action, success, ip_address="", location=""):
     """บันทึก login/logout log (ล้มเหลวไม่ crash แอป)"""
     try:
         conn = get_connection()
         cur = conn.cursor()
         cur.execute(
-            f"INSERT INTO login_logs (username, action, success, ip_address, created_at) "
-            f"VALUES ({PH},{PH},{PH},{PH},{PH});",
-            (username, action, 1 if success else 0, ip_address or "", now_str()),
+            f"INSERT INTO login_logs (username, action, success, ip_address, location, created_at) "
+            f"VALUES ({PH},{PH},{PH},{PH},{PH},{PH});",
+            (username, action, 1 if success else 0, ip_address or "", location or "", now_str()),
         )
         conn.commit()
         conn.close()

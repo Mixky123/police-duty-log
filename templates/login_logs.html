@@ -15,6 +15,7 @@
                 <th>การกระทำ</th>
                 <th>ผล</th>
                 <th>IP Address</th>
+                <th>สถานที่</th>
             </tr>
         </thead>
         <tbody>
@@ -36,9 +37,10 @@
                     {% endif %}
                 </td>
                 <td>{{ log.ip_address or "-" }}</td>
+                <td>{{ log.location or "-" }}</td>
             </tr>
             {% else %}
-            <tr><td colspan="5" style="text-align:center; color:#95a5a6;">ยังไม่มีประวัติการเข้าสู่ระบบ</td></tr>
+            <tr><td colspan="6" style="text-align:center; color:#95a5a6;">ยังไม่มีประวัติการเข้าสู่ระบบ</td></tr>
             {% endfor %}
         </tbody>
     </table>
