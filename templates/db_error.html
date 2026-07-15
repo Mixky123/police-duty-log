@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ฐานข้อมูลไม่พร้อมใช้งาน — ระบบจัดการเวรตำรวจ</title>
+    <style>
+        body {
+            font-family: "Segoe UI", Tahoma, sans-serif;
+            background: #f3f4f6;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .card {
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+            border-top: 5px solid #1e3a8a;
+            padding: 32px;
+            max-width: 560px;
+        }
+        h1 { color: #1e3a8a; font-size: 20px; margin: 0 0 12px; }
+        p { color: #374151; line-height: 1.6; }
+        .detail {
+            background: #f3f4f6;
+            border-radius: 6px;
+            padding: 12px;
+            font-family: Consolas, monospace;
+            font-size: 12px;
+            color: #6b7280;
+            word-break: break-all;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>🛡 ระบบเชื่อมต่อฐานข้อมูลไม่ได้ชั่วคราว</h1>
+        <p>
+            ขณะนี้ระบบไม่สามารถเชื่อมต่อกับฐานข้อมูลได้
+            กรุณารอสักครู่แล้วลองรีเฟรชหน้านี้อีกครั้ง
+            ระบบจะกลับมาใช้งานได้เองทันทีที่ฐานข้อมูลพร้อม
+        </p>
+        <p>รายละเอียดข้อผิดพลาด (สำหรับผู้ดูแลระบบ):</p>
+        <div class="detail">{{ message }}</div>
+    </div>
+</body>
+</html>

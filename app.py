@@ -47,8 +47,44 @@ app = Flask(__name__)
 # คีย์ลับสำหรับเข้ารหัส session — ใช้ค่าจาก environment ถ้ามี (บนเซิร์ฟเวอร์จริง)
 app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-key-change-me-in-production")
 
+# สถานะการเชื่อมต่อฐานข้อมูล (ใช้ร่วมกันทั้งแอป)
+db_ready = False
+db_error_message = ""
+
+
+def try_init_database():
+    """พยายามสร้าง/ตรวจสอบตารางฐานข้อมูล คืน True ถ้าสำเร็จ
+
+    ห้ามปล่อยให้ error หลุดออกไปตอน import เพราะ gunicorn จะปิดตัวทันที
+    (exit status 1) ทำให้ทั้งเว็บขึ้น 503 โดยไม่มีข้อความบอกสาเหตุ
+    """
+    global db_ready, db_error_message
+    try:
+        db.init_database()
+        db_ready = True
+        db_error_message = ""
+    except Exception as e:
+        db_ready = False
+        db_error_message = str(e)
+        print("Database init failed:", e, flush=True)
+    return db_ready
+
+
 # สร้าง/ตรวจสอบตารางฐานข้อมูลตั้งแต่ตอนเริ่มแอป
-db.init_database()
+try_init_database()
+
+
+@app.before_request
+def require_database():
+    """ถ้าฐานข้อมูลยังไม่พร้อม ลองเชื่อมต่อใหม่ก่อน แล้วค่อยแสดงหน้าแจ้งเตือน
+
+    การลองใหม่ทำให้เว็บกลับมาใช้งานได้เองเมื่อฐานข้อมูลกลับมา โดยไม่ต้อง deploy ใหม่
+    """
+    if db_ready or request.endpoint == "static":
+        return None
+    if try_init_database():
+        return None
+    return render_template("db_error.html", message=db_error_message), 503
 
 
 # ----- ตัวช่วย: บังคับให้ต้องเข้าสู่ระบบก่อนเข้าหน้าอื่น -----

@@ -14,14 +14,8 @@ services:
       # คีย์ลับของ session ให้ Render สุ่มสร้างให้อัตโนมัติ
       - key: SECRET_KEY
         generateValue: true
-      # ดึง connection string ของฐานข้อมูลด้านล่างมาใส่อัตโนมัติ
+      # connection string ของฐานข้อมูล ตั้งค่าเองในหน้า Dashboard ของ Render
+      # (Environment > DATABASE_URL) โดยใช้ค่าจาก Neon
+      # ไม่ใช้ฐานข้อมูลฟรีของ Render เพราะหมดอายุใน 30 วันแล้วเว็บจะล่ม
       - key: DATABASE_URL
-        fromDatabase:
-          name: police-duty-db
-          property: connectionString
-
-# ฐานข้อมูล PostgreSQL ออนไลน์
-databases:
-  - name: police-duty-db
-    plan: free
-    databaseName: police_duty
+        sync: false
